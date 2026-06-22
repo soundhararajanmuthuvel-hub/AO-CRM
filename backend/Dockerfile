@@ -24,6 +24,9 @@ RUN npm install --no-audit --no-fund
 
 COPY . .
 
+# Generate Prisma Client during build
+RUN npx prisma generate
+
 # Ensure session folders have read/write access
 RUN mkdir -p sessions uploads && chmod -R 777 sessions uploads
 
