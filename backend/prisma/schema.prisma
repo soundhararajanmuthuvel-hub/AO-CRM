@@ -1,0 +1,412 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model ApiConnection {
+  id String @id @default(uuid())
+  workspaceId String
+  name String
+  platform String
+  baseUrl String?
+  frontendUrl String?
+  backendApiUrl String?
+  apiKey String?
+  apiSecret String?
+  bearerToken String?
+  webhookUrl String?
+  webhookSecret String?
+  status String @default("Disconnected")
+  lastSyncAt DateTime?
+  fieldMapping String? @db.Text @default("{}")
+  syncStats String? @db.Text @default("{\"products\":0,\"customers\":0,\"orders\":0,\"catalogues\":0,\"errors\":[]}")
+  detectedResources String? @db.Text @default("[]")
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id String @id @default(uuid())
+  workspaceId String?
+  userId String?
+  userEmail String?
+  action String
+  details String? @db.Text
+  ipAddress String?
+  createdAt DateTime @default(now()) @updatedAt
+}
+
+model AutoReplyRule {
+  id String @id @default(uuid())
+  workspaceId String
+  keyword String
+  response String @db.Text
+  mediaUrl String?
+  mediaType String?
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model AutomationRule {
+  id String @id @default(uuid())
+  workspaceId String
+  name String
+  triggerType String @default("ContactAdded")
+  templateId String?
+  isActive Boolean @default(false)
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model BillingRecord {
+  id String @id @default(uuid())
+  workspaceId String
+  amount Decimal @db.Decimal(10, 2)
+  currency String @default("INR")
+  paymentGateway String @default("stripe")
+  gatewayPaymentId String?
+  gatewaySubscriptionId String?
+  status String @default("pending")
+  planName String
+  type String @default("subscription_creation")
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model Campaign {
+  id String @id @default(uuid())
+  workspaceId String
+  name String
+  type String @default("Marketing")
+  templateId String?
+  targetGroup String? @default("All")
+  scheduledAt DateTime?
+  status String @default("Draft")
+  totalMessages Int @default(0)
+  sentCount Int @default(0)
+  failedCount Int @default(0)
+  deliveredCount Int @default(0)
+  repliedCount Int @default(0)
+  convertedCount Int @default(0)
+  fileUrl String?
+  fileType String?
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model ChatNote {
+  id String @id @default(uuid())
+  workspaceId String
+  chatId String
+  userId String
+  note String @db.Text
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model Contact {
+  id String @id @default(uuid())
+  workspaceId String
+  name String
+  phone String
+  city String?
+  company String?
+  tags String? @db.Text @default("")
+  birthday DateTime?
+  totalPurchaseValue Decimal @db.Decimal(10, 2) @default(0)
+  lastPurchaseDate DateTime?
+  leadSource String @default("Manual Entry")
+  leadStage String @default("New")
+  leadScore String @default("Cold")
+  conversionProbability Float @default(0)
+  outstandingAmount Decimal @db.Decimal(10, 2) @default(0)
+  healthScore String @default("Active")
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model DailyVisit {
+  id String @id @default(uuid())
+  workspaceId String
+  executiveId String
+  contactId String
+  visitDate DateTime
+  status String @default("Pending")
+  notes String? @db.Text
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model MessageLog {
+  id String @id @default(uuid())
+  workspaceId String
+  campaignId String?
+  contactId String?
+  phone String
+  message String @db.Text
+  fileUrl String?
+  fileType String?
+  status String
+  error String? @db.Text
+  sentAt DateTime
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model MessageQueue {
+  id String @id @default(uuid())
+  workspaceId String
+  campaignId String?
+  contactId String?
+  phone String
+  message String @db.Text
+  fileUrl String?
+  fileType String?
+  status String @default("Pending")
+  retryCount Int @default(0)
+  error String? @db.Text
+  scheduledAt DateTime?
+  sentAt DateTime?
+  provider String? @default("whatsapp")
+  priority Int @default(0)
+  whatsappMessageId String?
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model MessageTemplate {
+  id String @id @default(uuid())
+  workspaceId String
+  name String
+  content String @db.Text
+  type String @default("text")
+  fileUrl String?
+  fileType String?
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id String @id @default(uuid())
+  workspaceId String
+  name String
+  sku String?
+  barcode String?
+  category String?
+  brand String?
+  unit String @default("pcs")
+  price Decimal @db.Decimal(10, 2) @default(0)
+  offerPrice Decimal? @db.Decimal(10, 2)
+  stock Int @default(0)
+  description String? @db.Text
+  benefits String? @db.Text
+  ingredients String? @db.Text
+  specifications String? @db.Text
+  imageUrls String? @db.Text
+  videoUrls String? @db.Text
+  productUrl String?
+  cataloguePdfUrl String?
+  imageUrl String?
+  catalogueUrl String?
+  videoUrl String?
+  websiteUrl String?
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model Route {
+  id String @id @default(uuid())
+  workspaceId String
+  territoryId String
+  name String
+  description String? @db.Text
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model SalesOrder {
+  id String @id @default(uuid())
+  workspaceId String
+  chatId String
+  customerName String
+  phone String
+  totalValue Decimal @db.Decimal(10, 2) @default(0)
+  status String @default("Draft")
+  invoiceUrl String?
+  deliverySlipUrl String?
+  paymentLink String?
+  invoiceNumber String?
+  city String?
+  items String? @db.Text
+  timeline String? @db.Text
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model SupportTicket {
+  id String @id @default(uuid())
+  workspaceId String
+  userId String
+  subject String
+  description String @db.Text
+  status String @default("open")
+  priority String @default("medium")
+  replies String? @db.Text
+  resolvedAt DateTime?
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model SyncHistory {
+  id String @id @default(uuid())
+  workspaceId String
+  connectionId String
+  syncType String
+  status String
+  recordsImported Int @default(0)
+  errorMessage String? @db.Text
+  runTimeMs Int @default(0)
+  createdAt DateTime @default(now()) @updatedAt
+}
+
+model SystemSetting {
+  id String @id @default(uuid())
+  key String
+  value String? @db.Text
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model Task {
+  id String @id @default(uuid())
+  workspaceId String
+  contactId String?
+  title String
+  description String? @db.Text
+  dueDate DateTime
+  status String @default("Pending")
+  reminderType String @default("CRM Notification")
+  assignedTo String?
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model Territory {
+  id String @id @default(uuid())
+  workspaceId String
+  name String
+  code String?
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id String @id @default(uuid())
+  name String
+  email String
+  passwordHash String?
+  googleId String?
+  role String @default("staff")
+  workspaceId String
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model WebhookLog {
+  id String @id @default(uuid())
+  workspaceId String
+  connectionId String?
+  receivedAt DateTime
+  source String
+  payload String @db.Text
+  status String @default("Processing")
+  errorMessage String? @db.Text
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model WhatsAppChat {
+  id String @id @default(uuid())
+  workspaceId String
+  chatId String
+  name String?
+  unreadCount Int @default(0)
+  lastMessage String? @db.Text
+  lastMessageTime DateTime?
+  assignedTo String?
+  salesStatus String @default("General")
+  customerStatus String @default("New")
+  lastSeen DateTime?
+  isPinned Boolean @default(false)
+  isArchived Boolean @default(false)
+  phoneNumber String?
+  profilePicUrl String? @db.Text
+  isGroup Boolean @default(false)
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model WhatsAppMessage {
+  id String @id @default(uuid())
+  workspaceId String
+  chatId String
+  messageId String
+  from String
+  to String
+  body String? @db.Text
+  timestamp DateTime
+  fromMe Boolean @default(false)
+  type String @default("chat")
+  mediaUrl String?
+  hasMedia Boolean @default(false)
+  isUnread Boolean @default(true)
+  leadIntent String @default("None")
+  orderIntent String @default("None")
+  sentiment String @default("None")
+  suggestedReply String? @db.Text
+  isStarred Boolean @default(false)
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model WhatsAppSession {
+  id String @id @default(uuid())
+  workspaceId String
+  name String @default("Primary Connection")
+  status String @default("Disconnected")
+  qrCode String? @db.Text
+  sessionData String? @db.Text
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+
+model Workspace {
+  id String @id @default(uuid())
+  name String
+  subscriptionPlan String @default("free")
+  messageUsageThisMonth Int @default(0)
+  messageLimit Int @default(1000)
+  stripeCustomerId String?
+  userLimit Int @default(5)
+  contactLimit Int @default(1000)
+  leadLimit Int @default(1000)
+  whatsappLimit Int @default(1)
+  storageLimit Int @default(100)
+  planExpiryDate DateTime?
+  status String @default("active")
+  logoUrl String?
+  faviconUrl String?
+  customDomain String?
+  brandColorPrimary String @default("#25D366")
+  brandColorSecondary String @default("#128C7E")
+  apiKey String?
+  apiSecret String?
+  webhookUrl String?
+  createdAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
+}
+

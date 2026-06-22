@@ -1,0 +1,2 @@
+-- Initial migration placeholder for MySQL schema managed via Sequelize.
+-- Sequelize sync alter:true handles table creation and schema updates on application startup.

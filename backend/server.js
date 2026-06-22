@@ -71,6 +71,34 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date() });
 });
 
+app.get('/api/health', async (req, res) => {
+  try {
+    // Validate database connection using both Sequelize and Prisma Client
+    await sequelize.authenticate();
+    
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    await prisma.$queryRaw`SELECT 1`;
+    await prisma.$disconnect();
+
+    res.json({
+      success: true,
+      status: "online",
+      database: "connected",
+      environment: process.env.NODE_ENV || "production"
+    });
+  } catch (err) {
+    console.error('[Health Check Error]:', err);
+    res.status(500).json({
+      success: false,
+      status: "offline",
+      database: "disconnected",
+      environment: process.env.NODE_ENV || "production",
+      error: err.message
+    });
+  }
+});
+
 // Socket.io Connection Logic
 io.on('connection', (socket) => {
   const { workspaceId } = socket.handshake.query;
@@ -100,6 +128,26 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
+    // Environment Variables startup validation
+    console.log('[Startup Validation] Verifying environment variables...');
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL environment variable is missing.');
+    }
+    console.log('[Startup Validation] Environment variables loaded.');
+
+    // Database connection startup validation
+    console.log('[Startup Validation] Verifying database connection...');
+    await sequelize.authenticate();
+    console.log('[Database] Sequelize connection verified.');
+
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    await prisma.$connect();
+    console.log('[Database] Prisma Client connection verified.');
+    await prisma.$disconnect();
+    
+    console.log('[Startup Validation] Database connected successfully.');
+
     // Sync models
     await sequelize.sync({ alter: true });
     console.log('[Database] Tables synchronized successfully.');
@@ -131,6 +179,7 @@ const startServer = async () => {
 
     server.listen(PORT, () => {
       console.log(`[Server] WhatsFlow running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode.`);
+      console.log('[Server Started] WhatsFlow API backend server is online.');
     });
   } catch (err) {
     console.error('[Server] Critical Startup Error:', err);

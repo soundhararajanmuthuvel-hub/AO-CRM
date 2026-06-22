@@ -1,12 +1,24 @@
 const { Sequelize } = require('sequelize');
-const path = require('path');
 require('dotenv').config();
 
 let sequelize;
+const dbUrl = process.env.DATABASE_URL;
 
-if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgres')) {
+if (dbUrl && dbUrl.startsWith('mysql')) {
+  console.log('Connecting to MySQL database...');
+  sequelize = new Sequelize(dbUrl, {
+    dialect: 'mysql',
+    logging: false,
+    dialectOptions: {
+      ssl: process.env.DB_SSL === 'true' ? {
+        require: true,
+        rejectUnauthorized: false
+      } : false
+    }
+  });
+} else if (dbUrl && dbUrl.startsWith('postgres')) {
   console.log('Connecting to PostgreSQL database...');
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
+  sequelize = new Sequelize(dbUrl, {
     dialect: 'postgres',
     logging: false,
     dialectOptions: {
@@ -17,12 +29,8 @@ if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgres'))
     }
   });
 } else {
-  console.warn('DATABASE_URL not set or not postgres. Falling back to SQLite for local development...');
-  sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: path.join(__dirname, '..', 'database.sqlite'),
-    logging: false
-  });
+  console.error('DATABASE_URL is not set or does not specify a mysql connection.');
+  throw new Error('Database connection configuration missing or invalid. Set DATABASE_URL starting with mysql://');
 }
 
 module.exports = sequelize;
