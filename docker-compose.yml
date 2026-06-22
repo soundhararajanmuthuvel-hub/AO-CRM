@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: whatsflow-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: whatsflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: whatsflow-backend
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      PORT: 5000
+      DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/whatsflow
+      JWT_SECRET: super_secret_jwt_key_change_me_in_production
+      CLIENT_URL: http://localhost:3000
+      MOCK_WHATSAPP: "false" # Set to true to run in simulator mode without scanning QRs
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/sessions:/app/sessions
+      - ./backend/uploads:/app/uploads
+
+  frontend:
+    build: ./frontend
+    container_name: whatsflow-frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:5000/api
+      NEXT_PUBLIC_SOCKET_URL: http://localhost:5000
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:

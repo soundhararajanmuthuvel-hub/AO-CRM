@@ -1,0 +1,10 @@
+{
+  "ignore": [
+    "sessions/**",
+    ".wwebjs_auth/**",
+    ".wwebjs_cache/**",
+    "database.sqlite",
+    "database.sqlite-journal"
+  ],
+  "ext": "js,mjs,cjs,json"
+}

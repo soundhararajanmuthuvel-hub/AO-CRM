@@ -1,0 +1,32 @@
+# node_modules
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# sessions
+backend/sessions/
+sessions/
+
+# local sqlite database
+*.sqlite
+backend/database.sqlite
+
+# build files
+.next/
+frontend/.next/
+frontend/out/
+dist/
+build/
+
+# logs
+logs/
+*.log
+npm-debug.log*
+
+# env files
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
