@@ -152,6 +152,22 @@ const startServer = async () => {
     await sequelize.sync({ alter: true });
     console.log('[Database] Tables synchronized successfully.');
 
+    // Auto-seed database if empty on startup
+    try {
+      const { User } = require('./models');
+      const userCount = await User.count();
+      if (userCount === 0) {
+        console.log('[Database] Database is empty. Running auto-seed...');
+        const seedAuto = require('./seed_auto');
+        await seedAuto();
+        console.log('[Database] Auto-seeding completed successfully.');
+      } else {
+        console.log('[Database] Database already contains data. Skipping auto-seed.');
+      }
+    } catch (seedErr) {
+      console.error('[Database] Auto-seeding failed:', seedErr);
+    }
+
     // Start background services
     queueProcessor.start();
     automationService.start();
