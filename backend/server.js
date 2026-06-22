@@ -19,12 +19,44 @@ process.on('uncaughtException', (error) => {
   console.error('[Uncaught Exception] Error:', error);
 });
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  process.env.CLIENT_URL
+].filter(Boolean);
+
+const checkOrigin = (origin) => {
+  if (!origin) return true;
+  const cleanOrigin = origin.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const cleanAllowed = allowedOrigins.map(allowed => 
+    allowed.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  );
+  return cleanAllowed.some(allowed => cleanOrigin === allowed) || cleanOrigin.endsWith('.vercel.app');
+};
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (checkOrigin(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+};
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST']
+    origin: (origin, callback) => {
+      if (checkOrigin(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
@@ -36,10 +68,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Enable CORS
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  credentials: true
-}));
+app.use(cors(corsOptions));
 
 // Serve local media uploads statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
