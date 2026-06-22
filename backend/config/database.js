@@ -12,13 +12,15 @@ if (dbUrl) {
   console.error('DATABASE_URL environment variable is missing.');
 }
 
+const useSSL = process.env.DB_SSL === 'true' || (dbUrl && dbUrl.includes('aivencloud.com'));
+
 if (dbUrl && dbUrl.startsWith('mysql')) {
   console.log('Connecting to MySQL database...');
   sequelize = new Sequelize(dbUrl, {
     dialect: 'mysql',
     logging: false,
     dialectOptions: {
-      ssl: process.env.DB_SSL === 'true' ? {
+      ssl: useSSL ? {
         require: true,
         rejectUnauthorized: false
       } : false
@@ -30,7 +32,7 @@ if (dbUrl && dbUrl.startsWith('mysql')) {
     dialect: 'postgres',
     logging: false,
     dialectOptions: {
-      ssl: process.env.DB_SSL === 'true' ? {
+      ssl: useSSL ? {
         require: true,
         rejectUnauthorized: false
       } : false
