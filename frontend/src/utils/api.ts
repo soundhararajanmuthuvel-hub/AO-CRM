@@ -1,7 +1,14 @@
 import axios from 'axios';
 
+let baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+// Normalize the API URL to ensure it always ends with '/api'
+if (baseURL && !baseURL.endsWith('/api') && !baseURL.endsWith('/api/')) {
+  baseURL = baseURL.replace(/\/$/, '') + '/api';
+}
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
