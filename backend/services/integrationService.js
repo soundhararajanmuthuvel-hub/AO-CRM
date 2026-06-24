@@ -2,6 +2,20 @@ const axios = require('axios');
 const { Product, Contact, SalesOrder, ApiConnection, SyncHistory } = require('../models');
 const { Op } = require('sequelize');
 
+const getErrorMessage = (err) => {
+  if (err.response && err.response.data) {
+    if (typeof err.response.data === 'string') {
+      return err.response.data;
+    }
+    if (err.response.data.message) {
+      return err.response.data.message;
+    }
+    return JSON.stringify(err.response.data);
+  }
+  return err.message;
+};
+
+
 /**
  * Validates connection settings by hitting the endpoint.
  */
@@ -324,8 +338,8 @@ const syncProducts = async (connectionId) => {
 
   } catch (err) {
     status = 'Failed';
-    errMsg = err.message;
-    logSyncError(connection, 'products', err.message);
+    errMsg = getErrorMessage(err);
+    logSyncError(connection, 'products', errMsg);
     throw err;
   } finally {
     const runTimeMs = Date.now() - startTime;
@@ -433,8 +447,8 @@ const syncCustomers = async (connectionId) => {
 
   } catch (err) {
     status = 'Failed';
-    errMsg = err.message;
-    logSyncError(connection, 'customers', err.message);
+    errMsg = getErrorMessage(err);
+    logSyncError(connection, 'customers', errMsg);
     throw err;
   } finally {
     const runTimeMs = Date.now() - startTime;
@@ -544,8 +558,8 @@ const syncOrders = async (connectionId) => {
 
   } catch (err) {
     status = 'Failed';
-    errMsg = err.message;
-    logSyncError(connection, 'orders', err.message);
+    errMsg = getErrorMessage(err);
+    logSyncError(connection, 'orders', errMsg);
     throw err;
   } finally {
     const runTimeMs = Date.now() - startTime;
@@ -631,8 +645,8 @@ const syncCatalogues = async (connectionId) => {
 
   } catch (err) {
     status = 'Failed';
-    errMsg = err.message;
-    logSyncError(connection, 'catalogues', err.message);
+    errMsg = getErrorMessage(err);
+    logSyncError(connection, 'catalogues', errMsg);
     throw err;
   } finally {
     const runTimeMs = Date.now() - startTime;
