@@ -113,6 +113,9 @@ model Contact {
   workspaceId String
   name String
   phone String
+  email String?
+  address String? @db.Text
+  gstNumber String?
   city String?
   company String?
   tags String? @db.Text @default("")
@@ -201,6 +204,7 @@ model Product {
   unit String @default("pcs")
   price Decimal @db.Decimal(10, 2) @default(0)
   offerPrice Decimal? @db.Decimal(10, 2)
+  mrp Decimal? @db.Decimal(10, 2)
   stock Int @default(0)
   description String? @db.Text
   benefits String? @db.Text

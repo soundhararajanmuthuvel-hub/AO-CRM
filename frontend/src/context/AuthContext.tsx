@@ -68,16 +68,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('whatsflow_token');
+      const token = localStorage.getItem('cusmancrm_token');
       if (token) {
         try {
           const response = await api.get('/auth/me');
           setUser(response.data.user);
           setWorkspace(response.data.workspace);
-          setIsImpersonating(localStorage.getItem('whatsflow_super_token') !== null);
+          setIsImpersonating(localStorage.getItem('cusmancrm_super_token') !== null);
         } catch (err) {
           console.error('Failed to authenticate token:', err);
-          localStorage.removeItem('whatsflow_token');
+          localStorage.removeItem('cusmancrm_token');
         }
       }
       setLoading(false);
@@ -90,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       const response = await api.post('/auth/login', { email, password });
-      localStorage.setItem('whatsflow_token', response.data.token);
+      localStorage.setItem('cusmancrm_token', response.data.token);
       setUser(response.data.user);
       setWorkspace(response.data.workspace);
       setIsImpersonating(false);
@@ -112,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       const response = await api.post('/auth/signup', { companyName, name, email, password });
-      localStorage.setItem('whatsflow_token', response.data.token);
+      localStorage.setItem('cusmancrm_token', response.data.token);
       setUser(response.data.user);
       setWorkspace(response.data.workspace);
       setIsImpersonating(false);
@@ -129,7 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       const response = await api.post('/auth/google', { googleId, email, name });
-      localStorage.setItem('whatsflow_token', response.data.token);
+      localStorage.setItem('cusmancrm_token', response.data.token);
       setUser(response.data.user);
       setWorkspace(response.data.workspace);
       setIsImpersonating(false);
@@ -143,8 +143,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    localStorage.removeItem('whatsflow_token');
-    localStorage.removeItem('whatsflow_super_token');
+    localStorage.removeItem('cusmancrm_token');
+    localStorage.removeItem('cusmancrm_super_token');
     setUser(null);
     setWorkspace(null);
     setIsImpersonating(false);
@@ -152,11 +152,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const impersonate = (token: string, targetUser: User, targetWorkspace: Workspace) => {
-    const currentToken = localStorage.getItem('whatsflow_token');
+    const currentToken = localStorage.getItem('cusmancrm_token');
     if (currentToken) {
-      localStorage.setItem('whatsflow_super_token', currentToken);
+      localStorage.setItem('cusmancrm_super_token', currentToken);
     }
-    localStorage.setItem('whatsflow_token', token);
+    localStorage.setItem('cusmancrm_token', token);
     setUser(targetUser);
     setWorkspace(targetWorkspace);
     setIsImpersonating(true);
@@ -164,10 +164,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const exitImpersonation = async () => {
-    const superToken = localStorage.getItem('whatsflow_super_token');
+    const superToken = localStorage.getItem('cusmancrm_super_token');
     if (superToken) {
-      localStorage.setItem('whatsflow_token', superToken);
-      localStorage.removeItem('whatsflow_super_token');
+      localStorage.setItem('cusmancrm_token', superToken);
+      localStorage.removeItem('cusmancrm_super_token');
       setIsImpersonating(false);
       setLoading(true);
       try {

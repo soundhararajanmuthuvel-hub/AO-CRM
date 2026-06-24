@@ -19,6 +19,19 @@ const Contact = sequelize.define('Contact', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  address: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  gstNumber: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'gst_number'
+  },
   city: {
     type: DataTypes.STRING,
     allowNull: true,

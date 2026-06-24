@@ -16,6 +16,6 @@
     <path d="M40 48 L 48 40 L 56 48 M 48 40 L 48 60" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
   </g>
   <!-- Logo Text -->
-  <text x="136" y="68" font-family="'Inter', sans-serif" font-size="40" font-weight="800" fill="#FFFFFF" letter-spacing="-1">Whats<tspan fill="#25D366">Flow</tspan></text>
-  <text x="136" y="94" font-family="'Inter', sans-serif" font-size="12" font-weight="700" fill="#128C7E" letter-spacing="4">SALES CRM</text>
+  <text x="136" y="68" font-family="'Inter', sans-serif" font-size="40" font-weight="800" fill="#FFFFFF" letter-spacing="-1">Cusman<tspan fill="#25D366"> CRM</tspan></text>
+  <text x="136" y="94" font-family="'Inter', sans-serif" font-size="12" font-weight="700" fill="#128C7E" letter-spacing="4">GROWTH HUB</text>
 </svg>

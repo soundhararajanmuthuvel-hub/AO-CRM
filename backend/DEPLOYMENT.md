@@ -1,6 +1,6 @@
 # Render Deployment & Troubleshooting Guide - MySQL Migration
 
-This document provides a deployment checklist, recommended settings, and troubleshooting guidelines for the WhatsFlow backend after migrating from SQLite to MySQL with Prisma ORM.
+This document provides a deployment checklist, recommended settings, and troubleshooting guidelines for the Cusman CRM backend after migrating from SQLite to MySQL with Prisma ORM.
 
 ## 1. Deployment Checklist
 
@@ -10,7 +10,7 @@ This document provides a deployment checklist, recommended settings, and trouble
   - `DATABASE_URL`: Must be a valid MySQL connection string in the format:
     `DATABASE_URL=mysql://<user>:<password>@<host>:<port>/<database>`
   - `JWT_SECRET`: A secure, secret key for signing JSON Web Tokens.
-  - `CLIENT_URL`: The URL of your frontend dashboard (e.g., Vercel deployment URL like `https://whatsflow.vercel.app`).
+  - `CLIENT_URL`: The URL of your frontend dashboard (e.g., Vercel deployment URL like `https://cusmancrm.vercel.app`).
   - `NODE_ENV`: Set to `production`.
 - [ ] **Build Command**:
   ```bash
@@ -22,8 +22,8 @@ This document provides a deployment checklist, recommended settings, and trouble
   ```
 
 ### Vercel (Frontend Dashboard Client)
-- [ ] **NEXT_PUBLIC_API_URL**: Set to point to the Render backend URL (e.g., `https://whatsflow-backend.onrender.com/api`).
-- [ ] **NEXT_PUBLIC_SOCKET_URL**: Set to the root URL of the Render backend (e.g., `https://whatsflow-backend.onrender.com`).
+- [ ] **NEXT_PUBLIC_API_URL**: Set to point to the Render backend URL (e.g., `https://cusmancrm-backend.onrender.com/api`).
+- [ ] **NEXT_PUBLIC_SOCKET_URL**: Set to the root URL of the Render backend (e.g., `https://cusmancrm-backend.onrender.com`).
 
 ---
 

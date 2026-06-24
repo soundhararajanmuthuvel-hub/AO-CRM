@@ -10,6 +10,7 @@ router.use(protect);
 
 router.get('/', contactController.getContacts);
 router.post('/', contactController.createContact);
+router.get('/:id/timeline', contactController.getContactTimeline);
 router.put('/:id', contactController.updateContact);
 router.delete('/:id', contactController.deleteContact);
 router.post('/import', upload.single('file'), contactController.importCSV);

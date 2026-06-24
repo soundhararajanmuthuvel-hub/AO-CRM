@@ -105,15 +105,22 @@ app.get('/api/health', async (req, res) => {
     // Validate database connection using both Sequelize and Prisma Client
     await sequelize.authenticate();
     
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
-    await prisma.$queryRaw`SELECT 1`;
-    await prisma.$disconnect();
+    let prismaConnected = false;
+    try {
+      const { PrismaClient } = require('@prisma/client');
+      const prisma = new PrismaClient();
+      await prisma.$queryRaw`SELECT 1`;
+      await prisma.$disconnect();
+      prismaConnected = true;
+    } catch (prismaErr) {
+      console.warn('[Health Check] Prisma verification bypassed:', prismaErr.message);
+    }
 
     res.json({
       success: true,
       status: "online",
       database: "connected",
+      prisma: prismaConnected ? "connected" : "bypassed",
       environment: process.env.NODE_ENV || "production"
     });
   } catch (err) {
@@ -169,16 +176,24 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('[Database] Sequelize connection verified.');
 
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
-    await prisma.$connect();
-    console.log('[Database] Prisma Client connection verified.');
-    await prisma.$disconnect();
+    try {
+      const { PrismaClient } = require('@prisma/client');
+      const prisma = new PrismaClient();
+      await prisma.$connect();
+      console.log('[Database] Prisma Client connection verified.');
+      await prisma.$disconnect();
+    } catch (prismaErr) {
+      console.warn('[Database] Prisma connection bypassed (using SQLite/fallback):', prismaErr.message);
+    }
     
     console.log('[Startup Validation] Database connected successfully.');
 
-    // Sync models
-    await sequelize.sync({ alter: true });
+    // Sync models safely (sqlite dialect cannot alter tables with foreign keys)
+    if (sequelize.options.dialect === 'sqlite') {
+      await sequelize.sync();
+    } else {
+      await sequelize.sync({ alter: true });
+    }
     console.log('[Database] Tables synchronized successfully.');
 
     // Auto-seed database if empty on startup
@@ -223,8 +238,8 @@ const startServer = async () => {
     }
 
     server.listen(PORT, () => {
-      console.log(`[Server] WhatsFlow running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode.`);
-      console.log('[Server Started] WhatsFlow API backend server is online.');
+      console.log(`[Server] Cusman CRM running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode.`);
+      console.log('[Server Started] Cusman CRM API backend server is online.');
     });
   } catch (err) {
     console.error('[Server] Critical Startup Error:', err);

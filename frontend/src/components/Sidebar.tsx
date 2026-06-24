@@ -59,10 +59,11 @@ export default function Sidebar() {
   return (
     <aside className="w-64 border-r border-neutral-800 bg-neutral-900/50 backdrop-blur-md flex flex-col h-screen sticky top-0">
       {/* Brand Header */}
-      <div className="p-5 border-b border-neutral-800/80 flex items-center justify-between bg-neutral-950/20">
-        <div className="flex items-center">
-          <img src="/logo-dark.svg" alt="WhatsFlow CRM" className="h-9 w-auto" />
+      <div className="p-5 border-b border-neutral-850 flex flex-col gap-1 bg-neutral-950/20">
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-primary to-teal-500">CUSMAN CRM</span>
         </div>
+        <span className="text-[9px] text-neutral-500 font-medium tracking-wide uppercase">Turn Conversations Into Customers</span>
       </div>
 
       {/* Tenant Indicator */}

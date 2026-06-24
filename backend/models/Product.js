@@ -44,6 +44,10 @@ const Product = sequelize.define('Product', {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: true,
   },
+  mrp: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+  },
   stock: {
     type: DataTypes.INTEGER,
     defaultValue: 0,

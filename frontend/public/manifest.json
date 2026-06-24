@@ -1,0 +1,22 @@
+{
+  "name": "Cusman CRM",
+  "short_name": "Cusman CRM",
+  "description": "AI-Powered Customer Growth Platform by DK's Technologies - Turn Conversations Into Customers",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo-icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -232,7 +232,7 @@ exports.getInvoice = async (req, res) => {
         </div>
         <div class="invoice-box">
           <div class="header">
-            <div class="logo">WhatsFlow CRM</div>
+            <div class="logo">Cusman CRM</div>
             <div class="title">
               <h2>INVOICE</h2>
               <strong>Date:</strong> ${dateStr}<br/>
@@ -278,7 +278,7 @@ exports.getInvoice = async (req, res) => {
           </div>
           <div class="footer">
             Thank you for your business!<br/>
-            Generated securely by WhatsFlow Enterprise CRM
+            Generated securely by Cusman Enterprise CRM
           </div>
         </div>
       </body>
@@ -334,7 +334,7 @@ exports.getDeliverySlip = async (req, res) => {
         </div>
         <div class="invoice-box">
           <div class="header">
-            <div class="logo">WhatsFlow CRM</div>
+            <div class="logo">Cusman CRM</div>
             <div class="title">
               <h2>DELIVERY SLIP</h2>
               <strong>Date:</strong> ${dateStr}<br/>
@@ -407,7 +407,7 @@ exports.getPaymentLink = async (req, res) => {
     }
 
     // Return a mock Stripe checkout link
-    const paymentLink = `https://checkout.stripe.com/pay/mock_whatsflow_session_${order.id}`;
+    const paymentLink = `https://checkout.stripe.com/pay/mock_cusmancrm_session_${order.id}`;
     
     // Save paymentLink back to order for tracking
     order.paymentLink = paymentLink;

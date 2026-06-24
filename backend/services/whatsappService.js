@@ -427,7 +427,7 @@ const createMockClient = (workspaceId) => {
       // Generate scannable mock QR code
       setTimeout(async () => {
         try {
-          const qrDataURL = await QRCode.toDataURL(`https://whatsflow.com/mock-link/${workspaceId}`);
+          const qrDataURL = await QRCode.toDataURL(`https://cusmancrm.com/mock-link/${workspaceId}`);
           await WhatsAppSession.update(
             { status: 'QR Ready', qrCode: qrDataURL },
             { where: { workspaceId } }

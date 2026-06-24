@@ -9,8 +9,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "WhatsFlow - WhatsApp Sales CRM SaaS",
-  description: "WhatsFlow connects WhatsApp with a premium CRM. Sync chats, capture leads, detect sales orders, and scale outreach automatically with AI Sales Assistants.",
+  title: "Cusman CRM - AI-Powered Customer Growth Platform",
+  description: "Cusman CRM by DK's Technologies helps businesses acquire customers, automate sales and marketing, sync WhatsApp conversations, detect client intents, and grow revenue.",
+  manifest: "/manifest.json",
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -23,16 +24,16 @@ export const metadata: Metadata = {
     ]
   },
   openGraph: {
-    title: "WhatsFlow - WhatsApp Sales CRM",
-    description: "Scale WhatsApp outreach with AI replies, chat sync, lead intent parsing, and automated sales order drafts.",
-    url: "https://whatsflow.com",
-    siteName: "WhatsFlow CRM",
+    title: "Cusman CRM - Turn Conversations Into Customers",
+    description: "Scale business growth, track leads pipeline, automate follow-ups, and manage WhatsApp teams with Cusman CRM.",
+    url: "https://cusmancrm.com",
+    siteName: "Cusman CRM",
     images: [
       {
         url: "/logo-icon.png",
         width: 512,
         height: 512,
-        alt: "WhatsFlow CRM Logo"
+        alt: "Cusman CRM Logo"
       }
     ],
     locale: "en_US",

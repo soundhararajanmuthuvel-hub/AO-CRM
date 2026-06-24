@@ -172,6 +172,53 @@ export default function TeamInboxPage() {
   const [alertError, setAlertError] = useState('');
   const [alertSuccess, setAlertSuccess] = useState('');
 
+  // Attachment states
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [attachedUrl, setAttachedUrl] = useState<string | null>(null);
+  const [attachedType, setAttachedType] = useState<string | null>(null);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+
+  const handleAttachFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    setAttachedFile(file);
+    setUploadingAttachment(true);
+    setAlertError('');
+    setAlertSuccess('');
+
+    try {
+      const formData = new FormData();
+      let endpoint = '';
+      if (file.type.startsWith('image/')) {
+        formData.append('image', file);
+        endpoint = '/products/upload-image';
+      } else if (file.type === 'application/pdf') {
+        formData.append('catalogue', file);
+        endpoint = '/products/upload-catalogue';
+      } else {
+        throw new Error('Unsupported format. Support image files and PDF documents.');
+      }
+
+      const res = await api.post(endpoint, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (res.data.success) {
+        setAttachedUrl(res.data.url);
+        setAttachedType(file.type);
+        setAlertSuccess(`File "${file.name}" uploaded successfully!`);
+      }
+    } catch (err: any) {
+      console.error('File upload error:', err);
+      setAlertError(err.message || err.response?.data?.error || 'Failed to upload attachment.');
+      setAttachedFile(null);
+      setAttachedUrl(null);
+      setAttachedType(null);
+    } finally {
+      setUploadingAttachment(false);
+    }
+  };
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Initial Data Fetch
@@ -341,15 +388,25 @@ export default function TeamInboxPage() {
   // Dispatch message reply
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedChat || !replyText.trim()) return;
+    if (!selectedChat) return;
+    if (!replyText.trim() && !attachedUrl) return;
 
     try {
-      const res = await api.post('/whatsapp/send', {
+      const payload: any = {
         phone: selectedChat.chatId,
         message: replyText
-      });
+      };
+      if (attachedUrl) {
+        payload.fileUrl = attachedUrl;
+        payload.fileType = attachedType;
+      }
+
+      const res = await api.post('/whatsapp/send', payload);
       if (res.data.success) {
         setReplyText('');
+        setAttachedFile(null);
+        setAttachedUrl(null);
+        setAttachedType(null);
       }
     } catch (err: any) {
       setAlertError(err.response?.data?.error || 'Failed to dispatch reply.');
@@ -1193,24 +1250,61 @@ export default function TeamInboxPage() {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Attached file preview */}
+            {attachedFile && (
+              <div className="px-4 py-2 bg-neutral-900/50 border-t border-neutral-800 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-neutral-300">
+                  <FileText className="w-4 h-4 text-primary shrink-0" />
+                  <span className="truncate max-w-[200px]">{attachedFile.name}</span>
+                  {uploadingAttachment ? (
+                    <span className="text-[10px] text-neutral-500 animate-pulse">(Uploading...)</span>
+                  ) : (
+                    <span className="text-[10px] text-green-500 font-semibold">(Ready to send)</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAttachedFile(null);
+                    setAttachedUrl(null);
+                    setAttachedType(null);
+                  }}
+                  className="text-neutral-500 hover:text-neutral-300 text-xs font-semibold cursor-pointer"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+
             {/* Input message footer */}
             {!showNotesTab && (
-              <form onSubmit={handleSendMessage} className="p-4 border-t border-neutral-800 shrink-0 bg-neutral-955/20 flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Type a WhatsApp reply message..."
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  className="flex-1 px-4 py-3.5 text-xs rounded-xl bg-neutral-950 border border-neutral-850 focus:outline-none focus:border-primary text-neutral-200 placeholder-neutral-500"
-                />
-                <button
-                  type="submit"
-                  disabled={!replyText.trim()}
-                  className="p-3.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 disabled:bg-neutral-950 disabled:border disabled:border-neutral-850 disabled:text-neutral-600 transition-all flex items-center justify-center shrink-0 cursor-pointer"
-                >
-                  <Send className="w-4.5 h-4.5" />
-                </button>
-              </form>
+              <div className="p-4 border-t border-neutral-800 shrink-0 bg-neutral-955/20 flex flex-col gap-2">
+                <form onSubmit={handleSendMessage} className="flex gap-2 items-center">
+                  <label className="p-3 rounded-xl border border-neutral-850 bg-neutral-950 hover:bg-neutral-900 text-neutral-400 hover:text-neutral-250 transition-all flex items-center justify-center shrink-0 cursor-pointer" title="Attach image or PDF">
+                    <FileUp className="w-4.5 h-4.5" />
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={handleAttachFile}
+                      className="hidden"
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Type a WhatsApp reply message..."
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    className="flex-1 px-4 py-3.5 text-xs rounded-xl bg-neutral-950 border border-neutral-850 focus:outline-none focus:border-primary text-neutral-200 placeholder-neutral-500"
+                  />
+                  <button
+                    type="submit"
+                    disabled={(!replyText.trim() && !attachedUrl) || uploadingAttachment}
+                    className="p-3.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 disabled:bg-neutral-950 disabled:border disabled:border-neutral-850 disabled:text-neutral-600 transition-all flex items-center justify-center shrink-0 cursor-pointer"
+                  >
+                    <Send className="w-4.5 h-4.5" />
+                  </button>
+                </form>
+              </div>
             )}
           </>
         ) : (

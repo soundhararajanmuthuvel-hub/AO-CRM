@@ -64,7 +64,7 @@ export default function LoginPage() {
         
         {/* Brand logo header */}
         <div className="text-center space-y-2">
-          <img src="/logo-dark.svg" alt="WhatsFlow CRM" className="h-10 w-auto mx-auto" />
+          <img src="/logo-dark.svg" alt="Cusman CRM" className="h-10 w-auto mx-auto" />
           <p className="text-xs text-neutral-500">Sign in to manage your WhatsApp sales relationships.</p>
         </div>
 
@@ -156,7 +156,7 @@ export default function LoginPage() {
 
         {/* Link to signup */}
         <p className="text-center text-xs text-neutral-500">
-          New to WhatsFlow?{' '}
+          New to Cusman CRM?{' '}
           <Link href="/signup" className="text-primary hover:underline font-bold">
             Create Free Workspace
           </Link>

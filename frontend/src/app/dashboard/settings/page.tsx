@@ -626,7 +626,7 @@ export default function SettingsPage() {
               <h3 className="font-bold text-neutral-200 text-base flex items-center gap-2">
                 <Key className="w-5 h-5 text-primary" /> API Developer Keys
               </h3>
-              <p className="text-xs text-neutral-450">Integrate AO ERP automated triggers directly into WhatsFlow using auth keys.</p>
+              <p className="text-xs text-neutral-450">Integrate AO ERP automated triggers directly into Cusman CRM using auth keys.</p>
 
               <div className="space-y-3 pt-2">
                 <div className="flex items-center gap-3">
@@ -788,7 +788,7 @@ export default function SettingsPage() {
                 <div>
                   <span className="font-black uppercase block text-[10px] text-amber-400 tracking-wider">⚠ WhatsApp Offline</span>
                   <p className="text-neutral-450 leading-relaxed font-sans pt-0.5">
-                    WhatsFlow message delivery is currently offline. <span className="font-bold text-neutral-200">{waitingCount} message(s)</span> are safely buffered in the SQL queue and will automatically send once a valid WhatsApp connection is restored.
+                    Cusman CRM message delivery is currently offline. <span className="font-bold text-neutral-200">{waitingCount} message(s)</span> are safely buffered in the SQL queue and will automatically send once a valid WhatsApp connection is restored.
                   </p>
                 </div>
               </div>

@@ -3,12 +3,12 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: whatsflow-postgres
+    container_name: cusmancrm-postgres
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgrespassword
-      POSTGRES_DB: whatsflow
+      POSTGRES_DB: cusmancrm
     ports:
       - "5432:5432"
     volumes:
@@ -16,13 +16,13 @@ services:
 
   backend:
     build: ./backend
-    container_name: whatsflow-backend
+    container_name: cusmancrm-backend
     restart: always
     depends_on:
       - postgres
     environment:
       PORT: 5000
-      DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/whatsflow
+      DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/cusmancrm
       JWT_SECRET: super_secret_jwt_key_change_me_in_production
       CLIENT_URL: http://localhost:3000
       MOCK_WHATSAPP: "false" # Set to true to run in simulator mode without scanning QRs
@@ -34,7 +34,7 @@ services:
 
   frontend:
     build: ./frontend
-    container_name: whatsflow-frontend
+    container_name: cusmancrm-frontend
     restart: always
     depends_on:
       - backend

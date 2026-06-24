@@ -148,7 +148,7 @@ exports.uploadProductImage = async (req, res) => {
     }
 
     const result = await cloudinaryService.uploadFile(req.file.path, {
-      folder: 'whatsflow/products/images',
+      folder: 'cusmancrm/products/images',
       resource_type: 'image'
     });
 
@@ -176,7 +176,7 @@ exports.uploadProductCatalogue = async (req, res) => {
     }
 
     const result = await cloudinaryService.uploadFile(req.file.path, {
-      folder: 'whatsflow/products/catalogues',
+      folder: 'cusmancrm/products/catalogues',
       resource_type: 'raw'
     });
 

@@ -21,7 +21,7 @@ const protect = async (req, res, next) => {
       req.user = {
         id: 'api-client-user-id',
         name: 'API Client',
-        email: 'api@whatsflow.com',
+        email: 'api@cusmancrm.com',
         role: 'admin',
         workspaceId: workspace.id,
         Workspace: workspace

@@ -122,7 +122,7 @@ exports.syncProducts = async (req, res) => {
     const count = await integrationService.syncProducts(connection.id);
     return res.json({
       success: true,
-      message: `Successfully synchronized ${count} products into WhatsFlow CRM.`,
+      message: `Successfully synchronized ${count} products into Cusman CRM.`,
       count
     });
   } catch (error) {
@@ -144,7 +144,7 @@ exports.syncCustomers = async (req, res) => {
     const count = await integrationService.syncCustomers(connection.id);
     return res.json({
       success: true,
-      message: `Successfully synchronized ${count} customers into WhatsFlow CRM.`,
+      message: `Successfully synchronized ${count} customers into Cusman CRM.`,
       count
     });
   } catch (error) {
@@ -166,7 +166,7 @@ exports.syncOrders = async (req, res) => {
     const count = await integrationService.syncOrders(connection.id);
     return res.json({
       success: true,
-      message: `Successfully synchronized ${count} orders into WhatsFlow CRM.`,
+      message: `Successfully synchronized ${count} orders into Cusman CRM.`,
       count
     });
   } catch (error) {
@@ -188,7 +188,7 @@ exports.syncCatalogues = async (req, res) => {
     const count = await integrationService.syncCatalogues(connection.id);
     return res.json({
       success: true,
-      message: `Successfully synchronized ${count} catalogues in WhatsFlow CRM.`,
+      message: `Successfully synchronized ${count} catalogues in Cusman CRM.`,
       count
     });
   } catch (error) {

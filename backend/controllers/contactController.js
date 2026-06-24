@@ -41,7 +41,10 @@ exports.getContacts = async (req, res) => {
 exports.createContact = async (req, res) => {
   try {
     const workspaceId = req.workspaceId;
-    const { name, phone, city, company, tags, birthday } = req.body;
+    const { 
+      name, phone, email, address, gstNumber, city, company, tags, birthday, 
+      leadSource, leadStage, leadScore, conversionProbability, outstandingAmount, healthScore 
+    } = req.body;
 
     if (!name || !phone) {
       return res.status(400).json({ error: 'Name and phone are required' });
@@ -54,10 +57,19 @@ exports.createContact = async (req, res) => {
       where: { workspaceId, phone: cleanPhone },
       defaults: {
         name,
+        email,
+        address,
+        gstNumber,
         city,
         company,
         tags: tags || '',
-        birthday: birthday || null
+        birthday: birthday || null,
+        leadSource: leadSource || 'Manual Entry',
+        leadStage: leadStage || 'New',
+        leadScore: leadScore || 'Cold',
+        conversionProbability: parseFloat(conversionProbability) || 0.0,
+        outstandingAmount: parseFloat(outstandingAmount) || 0.00,
+        healthScore: healthScore || 'Active'
       }
     });
 
@@ -114,7 +126,10 @@ exports.updateContact = async (req, res) => {
   try {
     const workspaceId = req.workspaceId;
     const { id } = req.params;
-    const { name, phone, city, company, tags, birthday } = req.body;
+    const { 
+      name, phone, email, address, gstNumber, city, company, tags, birthday,
+      leadSource, leadStage, leadScore, conversionProbability, outstandingAmount, healthScore
+    } = req.body;
 
     const contact = await Contact.findOne({ where: { id, workspaceId } });
     if (!contact) {
@@ -123,10 +138,19 @@ exports.updateContact = async (req, res) => {
 
     if (name) contact.name = name;
     if (phone) contact.phone = phone.replace(/[^\d]/g, '');
+    if (email !== undefined) contact.email = email;
+    if (address !== undefined) contact.address = address;
+    if (gstNumber !== undefined) contact.gstNumber = gstNumber;
     if (city !== undefined) contact.city = city;
     if (company !== undefined) contact.company = company;
     if (tags !== undefined) contact.tags = tags;
     if (birthday !== undefined) contact.birthday = birthday || null;
+    if (leadSource !== undefined) contact.leadSource = leadSource;
+    if (leadStage !== undefined) contact.leadStage = leadStage;
+    if (leadScore !== undefined) contact.leadScore = leadScore;
+    if (conversionProbability !== undefined) contact.conversionProbability = parseFloat(conversionProbability) || 0.0;
+    if (outstandingAmount !== undefined) contact.outstandingAmount = parseFloat(outstandingAmount) || 0.00;
+    if (healthScore !== undefined) contact.healthScore = healthScore;
 
     await contact.save();
     return res.json(contact);
@@ -263,5 +287,128 @@ exports.exportCSV = async (req, res) => {
   } catch (error) {
     console.error('Export CSV error:', error);
     return res.status(500).json({ error: 'Server error exporting contacts' });
+  }
+};
+
+exports.getContactTimeline = async (req, res) => {
+  try {
+    const workspaceId = req.workspaceId;
+    const { id } = req.params;
+
+    const contact = await Contact.findOne({ where: { id, workspaceId } });
+    if (!contact) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+
+    const { WhatsAppMessage, SalesOrder, Task, ChatNote } = require('../models');
+
+    // Fetch related logs
+    const chatId = `${contact.phone}@c.us`;
+
+    const [messages, orders, tasks, notes] = await Promise.all([
+      WhatsAppMessage.findAll({
+        where: { workspaceId, chatId },
+        limit: 100,
+        order: [['timestamp', 'DESC']]
+      }),
+      SalesOrder.findAll({
+        where: { workspaceId, [Op.or]: [{ phone: contact.phone }, { chatId }] },
+        order: [['createdAt', 'DESC']]
+      }),
+      Task.findAll({
+        where: { workspaceId, contactId: contact.id },
+        order: [['dueDate', 'DESC']]
+      }),
+      ChatNote.findAll({
+        where: { workspaceId, chatId },
+        order: [['createdAt', 'DESC']]
+      })
+    ]);
+
+    // Map to normalized timeline elements
+    const messageEvents = messages.map(m => ({
+      id: m.id,
+      type: 'message',
+      title: m.fromMe ? 'Outbound Message' : 'Inbound Message',
+      content: m.body,
+      date: m.timestamp,
+      meta: {
+        fromMe: m.fromMe,
+        type: m.type,
+        sentiment: m.sentiment,
+        leadIntent: m.leadIntent,
+        orderIntent: m.orderIntent
+      }
+    }));
+
+    const orderEvents = orders.map(o => {
+      let itemsList = [];
+      try { itemsList = JSON.parse(o.items || '[]'); } catch(e){}
+      const itemsSummary = itemsList.map(item => `${item.quantity}x ${item.productName}`).join(', ');
+      
+      return {
+        id: o.id,
+        type: 'order',
+        title: `Sales Order (${o.status})`,
+        content: itemsSummary || `Order value: ₹${o.totalValue}`,
+        date: o.createdAt,
+        meta: {
+          status: o.status,
+          totalValue: o.totalValue,
+          invoiceUrl: o.invoiceUrl
+        }
+      };
+    });
+
+    const taskEvents = tasks.map(t => ({
+      id: t.id,
+      type: 'task',
+      title: `Task: ${t.title}`,
+      content: t.description || 'No description provided.',
+      date: t.dueDate,
+      meta: {
+        status: t.status,
+        reminderType: t.reminderType
+      }
+    }));
+
+    const noteEvents = notes.map(n => ({
+      id: n.id,
+      type: 'note',
+      title: 'Sales Rep Note',
+      content: n.note,
+      date: n.createdAt,
+      meta: {
+        userId: n.userId
+      }
+    }));
+
+    // Combine and sort (Newest First)
+    const timeline = [
+      ...messageEvents,
+      ...orderEvents,
+      ...taskEvents,
+      ...noteEvents
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // Calculate metrics
+    const totalOrdersCount = orders.length;
+    const ltv = orders.reduce((sum, o) => sum + parseFloat(o.totalValue || 0), 0);
+    const aov = totalOrdersCount > 0 ? ltv / totalOrdersCount : 0;
+    const lastPurchaseDate = orders.length > 0 ? orders[0].createdAt : null;
+
+    return res.json({
+      contact,
+      metrics: {
+        totalOrders: totalOrdersCount,
+        ltv,
+        aov,
+        lastPurchaseDate
+      },
+      timeline
+    });
+  } catch (error) {
+    console.error('getContactTimeline error:', error);
+    return res.status(500).json({ error: 'Server error loading customer timeline' });
   }
 };

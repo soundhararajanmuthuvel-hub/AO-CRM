@@ -1,4 +1,5 @@
 const { Sequelize } = require('sequelize');
+const path = require('path');
 require('dotenv').config();
 
 let sequelize;
@@ -38,12 +39,22 @@ if (dbUrl && dbUrl.startsWith('mysql')) {
       } : false
     }
   });
+} else if (dbUrl && dbUrl.startsWith('sqlite')) {
+  console.log('Connecting to SQLite database...');
+  const storagePath = dbUrl.replace(/^sqlite:\/\//, '');
+  sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: storagePath === ':memory:' ? ':memory:' : (path.isAbsolute(storagePath) ? storagePath : path.join(__dirname, '..', storagePath || 'cusmancrm.sqlite')),
+    logging: false
+  });
 } else {
-  const errorMsg = dbUrl 
-    ? `Database connection configuration invalid. Received URL format not supported. Set DATABASE_URL starting with mysql://`
-    : `DATABASE_URL environment variable is missing. Set DATABASE_URL in your environment variables.`;
-  console.error(errorMsg);
-  throw new Error(errorMsg);
+  // Default to sqlite fallback if nothing else is matched or provided
+  console.log('No valid mysql/postgres DATABASE_URL provided. Falling back to SQLite database...');
+  sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: path.join(__dirname, '..', 'cusmancrm.sqlite'),
+    logging: false
+  });
 }
 
 module.exports = sequelize;

@@ -1,12 +1,12 @@
-# WhatsFlow - Production Deployment Guide
+# Cusman CRM - Production Deployment Guide
 
-This guide details the processes required to run WhatsFlow locally for development, or deploy it into production on a Virtual Private Server (VPS) using Docker.
+This guide details the processes required to run Cusman CRM locally for development, or deploy it into production on a Virtual Private Server (VPS) using Docker.
 
 ---
 
 ## 1. Running Locally (Development Mode)
 
-WhatsFlow uses a smart fallback design: if PostgreSQL is not running or not configured, it automatically initializes and runs on a local SQLite database (`backend/database.sqlite`). It also supports a simulated WhatsApp environment to run immediately without Chrome installation blockers.
+Cusman CRM uses a smart fallback design: if PostgreSQL is not running or not configured, it automatically initializes and runs on a local SQLite database (`backend/cusmancrm.sqlite`). It also supports a simulated WhatsApp environment to run immediately without Chrome installation blockers.
 
 ### Step 1: Start Backend API Server
 1. Navigate to the backend folder:
@@ -40,7 +40,7 @@ WhatsFlow uses a smart fallback design: if PostgreSQL is not running or not conf
 Docker Compose orchestrates the three tiers (Postgres, Node Express Backend, Next.js Client) and installs all Puppeteer browser dependencies automatically.
 
 ### Command Execution
-Navigate to the root directory `C:\Users\dines\.gemini\antigravity-ide\scratch\whatsflow` and run:
+Navigate to the root directory `C:\Users\dines\.gemini\antigravity-ide\scratch\cusman-crm` and run:
 ```bash
 # Build and run all service containers in background detached mode
 docker-compose up --build -d
@@ -64,7 +64,7 @@ sudo apt install -y nginx docker.io docker-compose
 ```
 
 ### Step 2: Configure Nginx Site Block
-Create a config file at `/etc/nginx/sites-available/whatsflow`:
+Create a config file at `/etc/nginx/sites-available/cusmancrm`:
 
 ```nginx
 server {
@@ -103,7 +103,7 @@ server {
 
 Enable site block and restart Nginx:
 ```bash
-sudo ln -s /etc/nginx/sites-available/whatsflow /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/cusmancrm /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
 ```
