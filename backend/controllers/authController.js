@@ -282,3 +282,21 @@ exports.rotateWorkspaceApiKeys = async (req, res) => {
   }
 };
 
+exports.logout = async (req, res) => {
+  return res.json({ success: true, message: 'Logged out successfully' });
+};
+
+exports.refresh = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const token = generateToken(userId);
+    return res.json({ success: true, token });
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    return res.status(500).json({ error: 'Server error refreshing token' });
+  }
+};
+

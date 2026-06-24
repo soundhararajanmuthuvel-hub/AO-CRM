@@ -1,0 +1,456 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Cusman CRM API Gateway",
+    "description": "Production-grade RESTful API Gateway for Cusman CRM — AI-Powered Customer Growth Platform by DSK Technologies. Supports multi-tenant SaaS integration, WhatsApp messaging, and ERP synchronizations.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "DSK Technologies Support",
+      "email": "support@dsktechnologies.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://crm.api.amudhasurabiy.com",
+      "description": "Production API Server"
+    },
+    {
+      "url": "http://localhost:5000",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Access Token for authorization. Add header 'Authorization: Bearer <TOKEN>'."
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-KEY",
+        "description": "Developer API Key authorization for external automated synchronization (e.g. ERP integration)."
+      }
+    },
+    "schemas": {
+      "Customer": {
+        "type": "object",
+        "required": ["name", "phone"],
+        "properties": {
+          "id": { "type": "integer", "readOnly": true },
+          "name": { "type": "string", "example": "Aman Verma" },
+          "phone": { "type": "string", "example": "919988776655" },
+          "email": { "type": "string", "format": "email", "example": "aman@company.com" },
+          "address": { "type": "string", "example": "123 Main St, Central Plaza" },
+          "city": { "type": "string", "example": "Coimbatore" },
+          "gstNumber": { "type": "string", "example": "33AAAAA1111A1Z1" },
+          "company": { "type": "string", "example": "Apex Traders" },
+          "tags": { "type": "string", "example": "Retailer,Premium" },
+          "birthday": { "type": "string", "format": "date", "example": "1990-05-15" },
+          "outstandingAmount": { "type": "number", "format": "float", "example": 1500.50 }
+        }
+      },
+      "Lead": {
+        "type": "object",
+        "required": ["name", "phone"],
+        "properties": {
+          "id": { "type": "integer", "readOnly": true },
+          "name": { "type": "string", "example": "Suresh Kumar" },
+          "phone": { "type": "string", "example": "919876543210" },
+          "city": { "type": "string", "example": "Bangalore" },
+          "company": { "type": "string", "example": "SK Logistics" },
+          "tags": { "type": "string", "example": "Lead,Hot" },
+          "leadSource": { "type": "string", "example": "SaaS Connector" },
+          "leadStage": { "type": "string", "enum": ["New", "Contacted", "Qualified", "Proposal Sent", "Negotiation", "Won", "Lost"], "example": "Qualified" },
+          "leadScore": { "type": "string", "enum": ["Hot", "Warm", "Cold"], "example": "Hot" },
+          "conversionProbability": { "type": "number", "format": "float", "example": 0.85 }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "required": ["name", "sku"],
+        "properties": {
+          "id": { "type": "integer", "readOnly": true },
+          "name": { "type": "string", "example": "Organic Green Tea" },
+          "sku": { "type": "string", "example": "ORG-GRN-TEA" },
+          "price": { "type": "number", "format": "float", "example": 199.00 },
+          "stock": { "type": "integer", "example": 150 },
+          "description": { "type": "string", "example": "Fresh organic green tea leaves directly from farms." },
+          "category": { "type": "string", "example": "Beverages" },
+          "brand": { "type": "string", "example": "Amudhasurabiy Organics" },
+          "imageUrl": { "type": "string", "format": "uri", "example": "https://res.cloudinary.com/demo/image/upload/v1/tea.jpg" },
+          "catalogueUrl": { "type": "string", "format": "uri", "example": "https://res.cloudinary.com/demo/raw/upload/v1/tea_catalog.pdf" }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "required": ["customerName", "phone", "items"],
+        "properties": {
+          "id": { "type": "integer", "readOnly": true },
+          "customerName": { "type": "string", "example": "Aman Verma" },
+          "phone": { "type": "string", "example": "919988776655" },
+          "city": { "type": "string", "example": "Coimbatore" },
+          "totalValue": { "type": "number", "format": "float", "example": 597.00 },
+          "status": { "type": "string", "example": "New Order" },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "productId": { "type": "integer", "example": 1 },
+                "productName": { "type": "string", "example": "Organic Green Tea" },
+                "quantity": { "type": "integer", "example": 3 },
+                "unitPrice": { "type": "number", "example": 199.00 }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    { "BearerAuth": [] },
+    { "ApiKeyAuth": [] }
+  ],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register a new workspace and administrator account",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["companyName", "name", "email", "password"],
+                "properties": {
+                  "companyName": { "type": "string", "example": "Amudhasurabiy Organics" },
+                  "name": { "type": "string", "example": "Dineshkumar" },
+                  "email": { "type": "string", "format": "email", "example": "admin@amudhasurabiy.com" },
+                  "password": { "type": "string", "format": "password", "example": "SecurePass123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Account registered and Workspace created successfully." },
+          "400": { "description": "Invalid input or email already registered." }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Authenticate user and issue JWT Access Token",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "admin@amudhasurabiy.com" },
+                  "password": { "type": "string", "format": "password", "example": "SecurePass123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful. Returns token and user payload." },
+          "401": { "description": "Invalid credentials." }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Revoke active token session",
+        "responses": {
+          "200": { "description": "Session logged out." }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "summary": "Refresh expired access token",
+        "responses": {
+          "200": { "description": "Issued new access token." }
+        }
+      }
+    },
+    "/api/customers": {
+      "get": {
+        "summary": "List all customers (Contacts) for the workspace",
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" }, "description": "Search by name, phone, email, etc." },
+          { "name": "tag", "in": "query", "schema": { "type": "string" }, "description": "Filter by custom tags." }
+        ],
+        "responses": {
+          "200": { "description": "List of customers returned." }
+        }
+      },
+      "post": {
+        "summary": "Create a new customer (Contact)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Customer" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Customer created successfully." }
+        }
+      }
+    },
+    "/api/customers/{id}": {
+      "get": {
+        "summary": "Get individual Customer details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Customer object returned." },
+          "404": { "description": "Customer not found." }
+        }
+      },
+      "put": {
+        "summary": "Update Customer details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Customer" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Customer updated." },
+          "404": { "description": "Customer not found." }
+        }
+      },
+      "delete": {
+        "summary": "Delete Customer",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Customer deleted successfully." },
+          "404": { "description": "Customer not found." }
+        }
+      }
+    },
+    "/api/leads": {
+      "get": {
+        "summary": "List all Active Leads",
+        "responses": {
+          "200": { "description": "List of active leads." }
+        }
+      },
+      "post": {
+        "summary": "Create a new Lead",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Lead" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Lead created successfully." }
+        }
+      }
+    },
+    "/api/leads/{id}": {
+      "get": {
+        "summary": "Get individual Lead details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Lead details." },
+          "404": { "description": "Lead not found." }
+        }
+      },
+      "put": {
+        "summary": "Update Lead details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Lead" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Lead details updated." }
+        }
+      },
+      "delete": {
+        "summary": "Delete Lead",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Lead deleted." }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "summary": "List products and catalogues",
+        "responses": {
+          "200": { "description": "List of products." }
+        }
+      },
+      "post": {
+        "summary": "Create a new Product",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Product" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Product created." }
+        }
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "summary": "Get individual Product",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Product object." }
+        }
+      },
+      "put": {
+        "summary": "Update Product details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Product" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Product updated." }
+        }
+      },
+      "delete": {
+        "summary": "Delete Product",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Product deleted." }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "summary": "List all sales orders",
+        "responses": {
+          "200": { "description": "List of sales orders." }
+        }
+      },
+      "post": {
+        "summary": "Create a new Sales Order",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Order" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Sales Order created." }
+        }
+      }
+    },
+    "/api/orders/{id}": {
+      "get": {
+        "summary": "Get individual Order details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Order object." }
+        }
+      },
+      "put": {
+        "summary": "Update Sales Order",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Order" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Sales Order updated." }
+        }
+      },
+      "delete": {
+        "summary": "Delete Sales Order",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Sales Order deleted." }
+        }
+      }
+    },
+    "/api/whatsapp/status": {
+      "get": {
+        "summary": "Get WhatsApp connection session status",
+        "responses": {
+          "200": { "description": "WhatsApp session status (READY, DISCONNECTED, INITIALIZING, QR_CODE)." }
+        }
+      }
+    },
+    "/api/whatsapp/qr": {
+      "get": {
+        "summary": "Get current connection QR Code in base64",
+        "responses": {
+          "200": { "description": "QR Code payload returned." }
+        }
+      }
+    },
+    "/api/whatsapp/send": {
+      "post": {
+        "summary": "Send WhatsApp message (Supports media and templates)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["phone", "message"],
+                "properties": {
+                  "phone": { "type": "string", "example": "919988776655" },
+                  "message": { "type": "string", "example": "Welcome to Cusman CRM!" },
+                  "fileUrl": { "type": "string", "format": "uri" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Message queued/sent successfully." }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "Perform a systems health check",
+        "security": [],
+        "responses": {
+          "200": { "description": "Database and Server are healthy." }
+        }
+      }
+    }
+  }
+}

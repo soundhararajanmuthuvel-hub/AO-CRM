@@ -475,3 +475,21 @@ exports.updateOrder = async (req, res) => {
     return res.status(500).json({ error: 'Server error updating order' });
   }
 };
+
+exports.getOrderById = async (req, res) => {
+  try {
+    const workspaceId = req.workspaceId;
+    const id = req.params.id || req.params.orderId;
+    const order = await SalesOrder.findOne({ where: { id, workspaceId } });
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    const orderJson = order.toJSON();
+    try { orderJson.items = JSON.parse(orderJson.items || '[]'); } catch(e) { orderJson.items = []; }
+    try { orderJson.timeline = JSON.parse(orderJson.timeline || '[]'); } catch(e) { orderJson.timeline = []; }
+    return res.json(orderJson);
+  } catch (error) {
+    console.error('getOrderById error:', error);
+    return res.status(500).json({ error: 'Server error retrieving order' });
+  }
+};

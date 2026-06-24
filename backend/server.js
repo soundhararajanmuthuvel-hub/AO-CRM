@@ -95,6 +95,70 @@ app.use('/api/ai', require('./routes/ai'));
 app.use('/api/integrations', require('./routes/integrations'));
 app.use('/api/messages', require('./routes/messages'));
 
+// Root API landing page (Dynamic HTML dashboard or JSON response)
+app.get('/', (req, res) => {
+  if (req.headers.accept && req.headers.accept.includes('text/html')) {
+    return res.sendFile(path.join(__dirname, 'public', 'api-status.html'));
+  }
+  return res.json({
+    success: true,
+    application: "Cusman CRM API",
+    company: "DSK Technologies",
+    status: "online",
+    version: "1.0.0",
+    environment: process.env.NODE_ENV || "production",
+    documentation: "/api/docs",
+    health: "/api/health"
+  });
+});
+
+// Swagger UI Documentation center
+app.get('/api/docs', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Cusman CRM API Documentation</title>
+      <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+      <style>
+        html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
+        *, *:before, *:after { box-sizing: inherit; }
+        body { margin:0; background: #fafafa; }
+      </style>
+    </head>
+    <body>
+      <div id="swagger-ui"></div>
+      <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+      <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+      <script>
+        window.onload = () => {
+          window.ui = SwaggerUIBundle({
+            url: '/api/openapi.json',
+            dom_id: '#swagger-ui',
+            deepLinking: true,
+            presets: [
+              SwaggerUIBundle.presets.apis,
+              SwaggerUIStandalonePreset
+            ],
+            plugins: [
+              SwaggerUIBundle.plugins.DownloadUrl
+            ],
+            layout: "BaseLayout"
+          });
+        };
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+// OpenAPI specifications JSON route
+app.get('/api/openapi.json', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'openapi.json'));
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date() });

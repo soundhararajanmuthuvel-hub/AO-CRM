@@ -8,8 +8,11 @@ const rateLimiter = require('../middleware/rateLimiter');
 const authLimiter = rateLimiter(15, 15 * 60 * 1000);
 
 router.post('/signup', authLimiter, authController.signup);
+router.post('/register', authLimiter, authController.signup);
 router.post('/login', authLimiter, authController.login);
 router.post('/google', authLimiter, authController.googleLogin);
+router.post('/logout', protect, authController.logout);
+router.post('/refresh', protect, authController.refresh);
 router.get('/me', protect, authController.getMe);
 router.get('/users', protect, authController.getWorkspaceUsers);
 router.put('/workspace', protect, authController.updateWorkspace);

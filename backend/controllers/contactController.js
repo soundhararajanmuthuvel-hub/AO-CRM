@@ -412,3 +412,18 @@ exports.getContactTimeline = async (req, res) => {
     return res.status(500).json({ error: 'Server error loading customer timeline' });
   }
 };
+
+exports.getContactById = async (req, res) => {
+  try {
+    const workspaceId = req.workspaceId;
+    const { id } = req.params;
+    const contact = await Contact.findOne({ where: { id, workspaceId } });
+    if (!contact) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+    return res.json(contact);
+  } catch (error) {
+    console.error('getContactById error:', error);
+    return res.status(500).json({ error: 'Server error retrieving contact' });
+  }
+};

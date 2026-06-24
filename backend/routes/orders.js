@@ -7,6 +7,7 @@ router.use(protect);
 
 router.get('/', orderController.getOrders);
 router.post('/', orderController.createOrder);
+router.get('/:orderId', orderController.getOrderById);
 router.put('/:id', orderController.updateOrder);
 router.put('/:orderId/status', orderController.updateOrderStatus);
 router.post('/:orderId/approve', orderController.approveDraftOrder);
