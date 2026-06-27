@@ -574,7 +574,11 @@ const initClient = async (workspaceId, forceRestart = false) => {
         '--disable-features=IsolateOrigins,site-per-process',
         '--disable-site-isolation-trials',
         '--no-default-browser-check',
-        '--window-size=1920,1080'
+        '--window-size=1920,1080',
+        '--no-zygote',
+        '--single-process',
+        '--disable-extensions',
+        '--disable-audio-output'
       ]
     };
     if (chromePath) {
@@ -589,11 +593,6 @@ const initClient = async (workspaceId, forceRestart = false) => {
         clientId: workspaceId,
         dataPath: sessionDir
       }),
-      webVersionCache: {
-        type: 'remote',
-        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1042251103-alpha.html',
-        strict: false
-      },
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
       puppeteer: puppeteerOptions
     });
