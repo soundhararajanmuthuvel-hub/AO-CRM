@@ -339,3 +339,36 @@ exports.getWebhookLogs = async (req, res) => {
     return res.status(500).json({ error: 'Failed to retrieve webhook debugger logs.' });
   }
 };
+
+exports.clearErrors = async (req, res) => {
+  try {
+    const workspaceId = req.workspaceId;
+    const { connectionId } = req.body;
+
+    if (!connectionId) {
+      return res.status(400).json({ error: 'Connection ID is required.' });
+    }
+
+    const connection = await ApiConnection.findOne({ where: { id: connectionId, workspaceId } });
+    if (!connection) {
+      return res.status(404).json({ error: 'Active connection not found.' });
+    }
+
+    let stats = {};
+    try {
+      stats = JSON.parse(connection.syncStats || '{}');
+    } catch (e) {}
+
+    stats.errors = [];
+    connection.syncStats = JSON.stringify(stats);
+    await connection.save();
+
+    return res.json({
+      success: true,
+      message: 'Troubleshooting logs successfully cleared.'
+    });
+  } catch (error) {
+    console.error('Clear errors controller error:', error);
+    return res.status(500).json({ error: 'Failed to clear troubleshooting logs.' });
+  }
+};

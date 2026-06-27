@@ -20,6 +20,7 @@ router.post('/sync-customers', integrationController.syncCustomers);
 router.post('/sync-orders', integrationController.syncOrders);
 router.post('/sync-catalogues', integrationController.syncCatalogues);
 router.get('/status', integrationController.getStatus);
+router.post('/clear-errors', integrationController.clearErrors);
 router.get('/sync-history', integrationController.getSyncHistory);
 router.get('/webhook-logs', integrationController.getWebhookLogs);
 

@@ -124,6 +124,7 @@ export default function SettingsPage() {
   const [savingConnection, setSavingConnection] = useState(false);
   const [syncingSection, setSyncingSection] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<string | null>(null);
+  const [clearingLogs, setClearingLogs] = useState(false);
 
   const loadSettingsData = async () => {
     try {
@@ -385,6 +386,27 @@ export default function SettingsPage() {
         setSyncingSection(null);
         setSyncProgress(0);
       }, 500);
+    }
+  };
+
+  const handleClearErrorLogs = async () => {
+    if (!selectedConnection) return;
+    if (!confirm('Are you sure you want to clear the error troubleshooting log?')) return;
+    setClearingLogs(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await api.post('/integrations/clear-errors', {
+        connectionId: selectedConnection.id
+      });
+      if (res.data.success) {
+        setSuccess(res.data.message);
+        fetchConnections();
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to clear troubleshooting logs.');
+    } finally {
+      setClearingLogs(false);
     }
   };
 
@@ -1199,10 +1221,30 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Sync error log history */}
-                  <div className="space-y-3.5 pt-2 border-t border-neutral-850/50">
-                    <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 text-rose-500 animate-pulse" /> Error Troubleshooting Log
-                    </h4>
+                  <div className="space-y-3.5">
+                    <div className="flex justify-between items-center pt-2 border-t border-neutral-850/50">
+                      <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-500 animate-pulse" /> Error Troubleshooting Log
+                      </h4>
+                      {(() => {
+                        const stats = (() => {
+                          try { return JSON.parse(selectedConnection.syncStats || '{}'); } catch(e) { return {}; }
+                        })();
+                        const errors = stats.errors || [];
+                        if (errors.length > 0) {
+                          return (
+                            <button
+                              onClick={handleClearErrorLogs}
+                              disabled={clearingLogs}
+                              className="text-[9px] font-bold text-rose-450 hover:text-rose-300 transition-all cursor-pointer underline flex items-center gap-1 disabled:opacity-50"
+                            >
+                              {clearingLogs ? 'Clearing...' : 'Clear Logs'}
+                            </button>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
                     <div className="space-y-2.5 max-h-36 overflow-y-auto pr-1">
                       {(() => {
                         const stats = (() => {

@@ -331,6 +331,9 @@ const syncProducts = async (connectionId) => {
 
     const stats = parseJSON(connection.syncStats, {});
     stats.products = (stats.products || 0) + importedCount;
+    if (stats.errors) {
+      stats.errors = stats.errors.filter(e => e.component !== 'products');
+    }
     connection.syncStats = JSON.stringify(stats);
     connection.lastSyncAt = new Date();
     connection.status = 'Connected';
@@ -440,6 +443,9 @@ const syncCustomers = async (connectionId) => {
 
     const stats = parseJSON(connection.syncStats, {});
     stats.customers = (stats.customers || 0) + importedCount;
+    if (stats.errors) {
+      stats.errors = stats.errors.filter(e => e.component !== 'customers');
+    }
     connection.syncStats = JSON.stringify(stats);
     connection.lastSyncAt = new Date();
     connection.status = 'Connected';
@@ -551,6 +557,9 @@ const syncOrders = async (connectionId) => {
 
     const stats = parseJSON(connection.syncStats, {});
     stats.orders = (stats.orders || 0) + importedCount;
+    if (stats.errors) {
+      stats.errors = stats.errors.filter(e => e.component !== 'orders');
+    }
     connection.syncStats = JSON.stringify(stats);
     connection.lastSyncAt = new Date();
     connection.status = 'Connected';
@@ -638,6 +647,9 @@ const syncCatalogues = async (connectionId) => {
 
     const stats = parseJSON(connection.syncStats, {});
     stats.catalogues = (stats.catalogues || 0) + importedCount;
+    if (stats.errors) {
+      stats.errors = stats.errors.filter(e => e.component !== 'catalogues');
+    }
     connection.syncStats = JSON.stringify(stats);
     connection.lastSyncAt = new Date();
     connection.status = 'Connected';
