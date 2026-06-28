@@ -288,7 +288,7 @@ const startServer = async () => {
       const sessions = await WhatsAppSession.findAll();
       for (const session of sessions) {
         const sessionPath = path.join(__dirname, 'sessions', `session-${session.workspaceId}`);
-        const mockSessionPath = path.join(__dirname, 'sessions', `mock-session-${session.workspaceId}`);
+        const mockSessionPath = path.join(__dirname, 'sessions', `mock-session-${session.workspaceId}.json`);
         const hasSession = fs.existsSync(sessionPath) || fs.existsSync(mockSessionPath);
         if (hasSession && (session.status === 'READY' || session.status === 'Connected' || session.status === 'Reconnecting' || session.status === 'Initializing')) {
           console.log(`[Startup] Restoring WhatsApp session for workspace: ${session.workspaceId}`);

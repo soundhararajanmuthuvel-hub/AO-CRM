@@ -45,7 +45,10 @@ if (dbUrl && dbUrl.startsWith('mysql')) {
   sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: storagePath === ':memory:' ? ':memory:' : (path.isAbsolute(storagePath) ? storagePath : path.join(__dirname, '..', storagePath || 'cusmancrm.sqlite')),
-    logging: false
+    logging: false,
+    dialectOptions: {
+      busyTimeout: 30000
+    }
   });
 } else {
   // Default to sqlite fallback if nothing else is matched or provided
@@ -53,7 +56,10 @@ if (dbUrl && dbUrl.startsWith('mysql')) {
   sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: path.join(__dirname, '..', 'cusmancrm.sqlite'),
-    logging: false
+    logging: false,
+    dialectOptions: {
+      busyTimeout: 30000
+    }
   });
 }
 

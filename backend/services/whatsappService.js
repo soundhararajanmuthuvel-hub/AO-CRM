@@ -542,6 +542,7 @@ const initClient = async (workspaceId, forceRestart = false) => {
     return mock;
   }
 
+  let client = null;
   try {
     const { Client, LocalAuth } = require('whatsapp-web.js');
 
@@ -575,8 +576,6 @@ const initClient = async (workspaceId, forceRestart = false) => {
         '--disable-site-isolation-trials',
         '--no-default-browser-check',
         '--window-size=1920,1080',
-        '--no-zygote',
-        '--single-process',
         '--disable-extensions',
         '--disable-audio-output'
       ]
@@ -588,7 +587,7 @@ const initClient = async (workspaceId, forceRestart = false) => {
       logInfo(workspaceId, 'No system Chrome installation found. Standard Puppeteer launch will be attempted.');
     }
 
-    const client = new Client({
+    client = new Client({
       authStrategy: new LocalAuth({
         clientId: workspaceId,
         dataPath: sessionDir
@@ -713,6 +712,13 @@ const initClient = async (workspaceId, forceRestart = false) => {
     return client;
   } catch (err) {
     logError(workspaceId, 'Puppeteer initialization failed. Invalidating session folder...', err);
+    if (client && client.pupBrowser) {
+      try {
+        await client.pupBrowser.close();
+      } catch (closeErr) {
+        logError(workspaceId, 'Failed to close pupBrowser during error handling', closeErr);
+      }
+    }
     cleanSessionFolder(workspaceId);
     await WhatsAppSession.update(
       { status: 'Disconnected', qrCode: null },
@@ -819,5 +825,6 @@ module.exports = {
   getClient,
   logoutClient,
   sendWhatsAppMessage,
-  hasSavedSession
+  hasSavedSession,
+  syncWorkspaceChats
 };
