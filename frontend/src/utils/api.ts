@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-let baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+let baseURL = process.env.NEXT_PUBLIC_API_URL || 
+  (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') 
+    ? window.location.origin + '/api' 
+    : 'http://localhost:5000/api');
 
 // Normalize the API URL to ensure it always ends with '/api'
 if (baseURL && !baseURL.endsWith('/api') && !baseURL.endsWith('/api/')) {

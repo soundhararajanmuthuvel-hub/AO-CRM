@@ -87,8 +87,10 @@ export default function WhatsAppDashboardPage() {
 
     fetchSessionStatusAndLogs();
 
-    // Setup Websocket Room
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 
+      (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') 
+        ? window.location.origin 
+        : 'http://localhost:5000');
     const socket: Socket = io(socketUrl, {
       query: { workspaceId: user.workspaceId }
     });
