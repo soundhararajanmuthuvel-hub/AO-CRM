@@ -59,9 +59,12 @@ export default function SettingsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Local state for API key
-  const [apiKey, setApiKey] = useState('wf_live_839da49b2f69e6bca2651475ad198305c2d');
+  // Local state for API credentials
+  const [apiKey, setApiKey] = useState('');
+  const [apiSecret, setApiSecret] = useState('');
   const [showKey, setShowKey] = useState(false);
+  const [showSecret, setShowSecret] = useState(false);
+  const [showSpecs, setShowSpecs] = useState(false);
 
   // White label states
   const [wlLogo, setWlLogo] = useState('');
@@ -140,6 +143,8 @@ export default function SettingsPage() {
         setWlDomain(workspace.customDomain || '');
         setWlColorPrimary(workspace.brandColorPrimary || '#25D366');
         setWlColorSecondary(workspace.brandColorSecondary || '#128C7E');
+        setApiKey(workspace.apiKey || '');
+        setApiSecret(workspace.apiSecret || '');
       }
 
       // Simulate team list since user workspace has only this user initially
@@ -223,14 +228,18 @@ export default function SettingsPage() {
     }
   };
 
-  const generateNewAPIKey = () => {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let key = 'wf_live_';
-    for (let i = 0; i < 32; i++) {
-      key += chars.charAt(Math.floor(Math.random() * chars.length));
+  const generateNewAPIKey = async () => {
+    try {
+      setError('');
+      setSuccess('');
+      const res = await api.post('/auth/workspace/rotate-api-keys');
+      setApiKey(res.data.apiKey);
+      setApiSecret(res.data.apiSecret);
+      setSuccess('Rotated and generated new API credentials successfully.');
+      await refreshProfile();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to rotate API credentials.');
     }
-    setApiKey(key);
-    setSuccess('Generated new API key successfully.');
   };
 
   const fetchConnections = async () => {
@@ -650,29 +659,125 @@ export default function SettingsPage() {
               </h3>
               <p className="text-xs text-neutral-450">Integrate AO ERP automated triggers directly into Cusman CRM using auth keys.</p>
 
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center gap-3">
-                  <input
-                    type={showKey ? 'text' : 'password'}
-                    readOnly
-                    value={apiKey}
-                    className="flex-1 px-4 py-3 rounded-xl text-xs bg-neutral-950/80 border border-neutral-850 text-mono text-neutral-350 focus:outline-none focus:border-neutral-700 font-mono shadow-inner"
-                  />
+              <div className="space-y-4 pt-2">
+                {/* CRM API Key Input */}
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-semibold text-neutral-450">CRM API KEY</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type={showKey ? 'text' : 'password'}
+                      readOnly
+                      value={apiKey}
+                      className="flex-1 px-4 py-3 rounded-xl text-xs bg-neutral-950/80 border border-neutral-850 text-mono text-neutral-350 focus:outline-none focus:border-neutral-700 font-mono shadow-inner"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowKey(!showKey)}
+                      className="px-4 py-3 rounded-xl border border-neutral-850 bg-neutral-900 hover:bg-neutral-850/60 text-xs font-bold text-neutral-350 cursor-pointer transition-all w-20 text-center"
+                    >
+                      {showKey ? 'Hide' : 'Reveal'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* CRM Secret Key Input */}
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-semibold text-neutral-450">CRM SECRET KEY</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type={showSecret ? 'text' : 'password'}
+                      readOnly
+                      value={apiSecret}
+                      className="flex-1 px-4 py-3 rounded-xl text-xs bg-neutral-950/80 border border-neutral-850 text-mono text-neutral-350 focus:outline-none focus:border-neutral-700 font-mono shadow-inner"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSecret(!showSecret)}
+                      className="px-4 py-3 rounded-xl border border-neutral-850 bg-neutral-900 hover:bg-neutral-850/60 text-xs font-bold text-neutral-350 cursor-pointer transition-all w-20 text-center"
+                    >
+                      {showSecret ? 'Hide' : 'Reveal'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2">
                   <button
                     type="button"
-                    onClick={() => setShowKey(!showKey)}
-                    className="px-4 py-3 rounded-xl border border-neutral-850 bg-neutral-900 hover:bg-neutral-850/60 text-xs font-bold text-neutral-350 cursor-pointer transition-all"
+                    onClick={generateNewAPIKey}
+                    className="text-[11px] font-bold text-primary hover:text-primary/90 transition-all hover:underline cursor-pointer"
                   >
-                    {showKey ? 'Hide' : 'Reveal'}
+                    Regenerate key credentials
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowSpecs(!showSpecs)}
+                    className="text-[11px] font-bold text-neutral-300 hover:text-neutral-100 transition-all hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    {showSpecs ? 'Hide ERP Sync Details' : 'Show ERP Sync Details'}
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={generateNewAPIKey}
-                  className="px-4 py-2 text-[11px] font-bold text-primary hover:text-primary/90 transition-all hover:underline cursor-pointer"
-                >
-                  Regenerate key credentials
-                </button>
+
+                {/* Collapsible Specs & Guide Block */}
+                {showSpecs && (
+                  <div className="mt-4 p-4 rounded-xl border border-neutral-850/70 bg-neutral-950/50 space-y-4 text-neutral-300 text-xs animate-in slide-in-from-top-4 duration-300">
+                    <div className="border-b border-neutral-850 pb-2">
+                      <h4 className="font-bold text-neutral-200">AO Core ERP Integration Guide</h4>
+                      <p className="text-[10px] text-neutral-450 mt-0.5">Use these credentials and endpoints to integrate your ERP.</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-neutral-450 font-semibold">CRM Base URL:</span>
+                        <span className="font-mono text-neutral-200">{(typeof window !== 'undefined') ? window.location.origin : 'https://ao-crm-three.vercel.app'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-neutral-450 font-semibold">Authentication:</span>
+                        <span className="text-neutral-200">Custom Headers</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-neutral-450 font-semibold">Header 1:</span>
+                        <span className="font-mono text-neutral-200">x-api-key</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-neutral-450 font-semibold">Header 2:</span>
+                        <span className="font-mono text-neutral-200">x-api-secret</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-2 border-t border-neutral-850/60">
+                      <div>
+                        <span className="font-bold text-primary block mb-1">🔗 Endpoint 1: Test Connection</span>
+                        <div className="bg-neutral-950 p-2 rounded-lg font-mono text-[10px] text-neutral-400 space-y-1">
+                          <p><span className="text-emerald-400 font-bold">POST</span> /api/whatsapp/verify-connection</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="font-bold text-primary block mb-1">🔗 Endpoint 2: Send Text Message</span>
+                        <div className="bg-neutral-950 p-2 rounded-lg font-mono text-[10px] text-neutral-400 space-y-1">
+                          <p><span className="text-emerald-400 font-bold">POST</span> /api/whatsapp/test-send</p>
+                          <p className="text-neutral-500">// Payload format:</p>
+                          <p className="text-neutral-350">{`{ "phone": "917010602115", "message": "..." }`}</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="font-bold text-primary block mb-1">🔗 Endpoint 3: Send PDF Invoice / Catalogue</span>
+                        <div className="bg-neutral-950 p-2 rounded-lg font-mono text-[10px] text-neutral-400 space-y-1">
+                          <p><span className="text-emerald-400 font-bold">POST</span> /api/whatsapp/send</p>
+                          <p className="text-neutral-500">// Payload format:</p>
+                          <p className="text-neutral-350">{`{`}</p>
+                          <p className="text-neutral-350">{`  "phone": "917010602115",`}</p>
+                          <p className="text-neutral-350">{`  "message": "...",`}</p>
+                          <p className="text-neutral-350">{`  "fileUrl": "https://example.com/invoice.pdf",`}</p>
+                          <p className="text-neutral-350">{`  "fileType": "application/pdf"`}</p>
+                          <p className="text-neutral-350">{`}`}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
