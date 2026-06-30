@@ -30,6 +30,9 @@ interface Workspace {
   customDomain?: string;
   brandColorPrimary?: string;
   brandColorSecondary?: string;
+  apiKey?: string;
+  apiSecret?: string;
+  webhookUrl?: string;
 }
 
 interface AuthContextType {
