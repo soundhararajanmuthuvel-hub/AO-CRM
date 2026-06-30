@@ -145,9 +145,19 @@ export default function SettingsPage() {
         setWlDomain(workspace.customDomain || '');
         setWlColorPrimary(workspace.brandColorPrimary || '#25D366');
         setWlColorSecondary(workspace.brandColorSecondary || '#128C7E');
-        setApiKey(workspace.apiKey || '');
-        setApiSecret(workspace.apiSecret || '');
         setWebhookUrl(workspace.webhookUrl || '');
+        if (!workspace.apiKey || !workspace.apiSecret) {
+          api.post('/auth/workspace/rotate-api-keys').then(res => {
+            setApiKey(res.data.apiKey);
+            setApiSecret(res.data.apiSecret);
+            refreshProfile();
+          }).catch(err => {
+            console.error('Failed to auto-generate API keys:', err);
+          });
+        } else {
+          setApiKey(workspace.apiKey);
+          setApiSecret(workspace.apiSecret);
+        }
       }
 
       // Simulate team list since user workspace has only this user initially
