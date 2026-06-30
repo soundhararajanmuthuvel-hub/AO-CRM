@@ -65,6 +65,8 @@ export default function SettingsPage() {
   const [showKey, setShowKey] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
   const [showSpecs, setShowSpecs] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [savingWebhook, setSavingWebhook] = useState(false);
 
   // White label states
   const [wlLogo, setWlLogo] = useState('');
@@ -145,6 +147,7 @@ export default function SettingsPage() {
         setWlColorSecondary(workspace.brandColorSecondary || '#128C7E');
         setApiKey(workspace.apiKey || '');
         setApiSecret(workspace.apiSecret || '');
+        setWebhookUrl(workspace.webhookUrl || '');
       }
 
       // Simulate team list since user workspace has only this user initially
@@ -182,6 +185,24 @@ export default function SettingsPage() {
       setError(err.response?.data?.error || 'Failed to update custom branding.');
     } finally {
       setSavingWL(false);
+    }
+  };
+
+  const handleSaveWebhook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingWebhook(true);
+    setError('');
+    setSuccess('');
+    try {
+      await api.put('/auth/workspace', {
+        webhookUrl: webhookUrl || null
+      });
+      setSuccess('Webhook URL configuration saved successfully.');
+      await refreshProfile();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to update Webhook URL.');
+    } finally {
+      setSavingWebhook(false);
     }
   };
 
@@ -660,6 +681,17 @@ export default function SettingsPage() {
               <p className="text-xs text-neutral-450">Integrate AO ERP automated triggers directly into Cusman CRM using auth keys.</p>
 
               <div className="space-y-4 pt-2">
+                {/* CRM Base URL */}
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-semibold text-neutral-450">CRM BASE URL</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={typeof window !== 'undefined' ? window.location.origin + '/' : 'https://ao-crm-three.vercel.app/'}
+                    className="w-full px-4 py-3 rounded-xl text-xs bg-neutral-950/80 border border-neutral-850 text-neutral-300 focus:outline-none focus:border-neutral-700 font-mono shadow-inner cursor-not-allowed"
+                  />
+                </div>
+
                 {/* CRM API Key Input */}
                 <div className="space-y-1">
                   <label className="block text-[11px] font-semibold text-neutral-450">CRM API KEY</label>
@@ -700,23 +732,47 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
-                  <button
-                    type="button"
-                    onClick={generateNewAPIKey}
-                    className="text-[11px] font-bold text-primary hover:text-primary/90 transition-all hover:underline cursor-pointer"
-                  >
-                    Regenerate key credentials
-                  </button>
+                {/* Webhook URL / Secret */}
+                <form onSubmit={handleSaveWebhook} className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-semibold text-neutral-450">WEBHOOK URL / SECRET (OPTIONAL)</label>
+                    <input
+                      type="text"
+                      placeholder="Enter webhook URL (e.g. https://your-erp.com/webhook)"
+                      value={webhookUrl}
+                      onChange={(e) => setWebhookUrl(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl text-xs bg-neutral-950/80 border border-neutral-850 text-neutral-300 focus:outline-none focus:border-neutral-700 font-mono shadow-inner"
+                    />
+                  </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setShowSpecs(!showSpecs)}
-                    className="text-[11px] font-bold text-neutral-300 hover:text-neutral-100 transition-all hover:underline cursor-pointer flex items-center gap-1"
-                  >
-                    {showSpecs ? 'Hide ERP Sync Details' : 'Show ERP Sync Details'}
-                  </button>
-                </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={generateNewAPIKey}
+                        className="text-[11px] font-bold text-primary hover:text-primary/90 transition-all hover:underline cursor-pointer"
+                      >
+                        Regenerate key credentials
+                      </button>
+                      <span className="text-neutral-700">|</span>
+                      <button
+                        type="submit"
+                        disabled={savingWebhook}
+                        className="text-[11px] font-bold text-primary hover:text-primary/90 transition-all hover:underline cursor-pointer"
+                      >
+                        {savingWebhook ? 'Saving...' : 'Save Webhook'}
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowSpecs(!showSpecs)}
+                      className="text-[11px] font-bold text-neutral-300 hover:text-neutral-100 transition-all hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      {showSpecs ? 'Hide ERP Sync Details' : 'Show ERP Sync Details'}
+                    </button>
+                  </div>
+                </form>
 
                 {/* Collapsible Specs & Guide Block */}
                 {showSpecs && (
@@ -729,7 +785,7 @@ export default function SettingsPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-neutral-450 font-semibold">CRM Base URL:</span>
-                        <span className="font-mono text-neutral-200">{(typeof window !== 'undefined') ? window.location.origin : 'https://ao-crm-three.vercel.app'}</span>
+                        <span className="font-mono text-neutral-200">{(typeof window !== 'undefined') ? window.location.origin + '/' : 'https://ao-crm-three.vercel.app/'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-neutral-450 font-semibold">Authentication:</span>
