@@ -30,7 +30,10 @@ const checkOrigin = (origin) => {
   const cleanAllowed = allowedOrigins.map(allowed => 
     allowed.replace(/^https?:\/\//, '').replace(/\/$/, '')
   );
-  return cleanAllowed.some(allowed => cleanOrigin === allowed) || cleanOrigin.endsWith('.vercel.app');
+  return cleanAllowed.some(allowed => cleanOrigin === allowed) || 
+         cleanOrigin.endsWith('.vercel.app') || 
+         cleanOrigin === 'crm.amudhasurabiy.com' || 
+         cleanOrigin.endsWith('.amudhasurabiy.com');
 };
 
 const corsOptions = {
@@ -38,7 +41,7 @@ const corsOptions = {
     if (checkOrigin(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(null, false);
     }
   },
   credentials: true
@@ -52,7 +55,7 @@ const io = new Server(server, {
       if (checkOrigin(origin)) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(null, false);
       }
     },
     methods: ['GET', 'POST'],
