@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const QRCode = require('qrcode');
-const { execSync } = require('child_process');
+const { execSync, exec } = require('child_process');
 const { WhatsAppSession, WhatsAppChat, WhatsAppMessage, ChatNote, SalesOrder, Contact } = require('../models');
 
 // Socket.io instance reference
@@ -10,6 +10,8 @@ let ioInstance = null;
 // Multi-tenant client pool
 const clients = new Map();
 const lastSendTimes = new Map();
+const activePids = new Map();
+const lastCleanupTimes = new Map();
 
 // Helper to set socket.io
 const setIO = (io) => {
@@ -680,22 +682,64 @@ const syncIncomingMessage = async (workspaceId, client, msg) => {
 };
 
 // Helper to clean local session folders and terminate locked chrome processes
-const cleanSessionFolder = (workspaceId) => {
+// Helper to clean local session folders and terminate locked chrome processes
+const cleanSessionFolder = async (workspaceId) => {
+  const lastCleanup = lastCleanupTimes.get(workspaceId) || 0;
+  if (Date.now() - lastCleanup < 5000) {
+    logInfo(workspaceId, `cleanSessionFolder called too soon after last success. Skipping duplicate invocation.`);
+    return;
+  }
+  // Set lock timestamp immediately at start to prevent concurrent races
+  lastCleanupTimes.set(workspaceId, Date.now());
+
   logInfo(workspaceId, `Attempting to clean session and release resources...`);
-  
-  // 1. Terminate any running chrome instances using this session folder
-  try {
+
+  // 1. Timeout guard for the process cleanup phase (e.g. 6 seconds)
+  const processKillPromise = new Promise((resolve) => {
+    // Targeted PID Kill
+    const pid = activePids.get(workspaceId);
+    if (pid) {
+      logInfo(workspaceId, `Killing target Chrome process PID: ${pid}`);
+      try {
+        if (process.platform === 'win32') {
+          exec(`taskkill /PID ${pid} /F /T`, { timeout: 3000 }, () => {
+            activePids.delete(workspaceId);
+            resolve();
+          });
+          return;
+        } else {
+          process.kill(pid, 'SIGKILL');
+          activePids.delete(workspaceId);
+          resolve();
+          return;
+        }
+      } catch (e) {
+        logError(workspaceId, `Failed to kill process PID: ${pid}`, e);
+      }
+    }
+
+    // Fallback system-wide process query scan
     let cmd = '';
     if (process.platform === 'win32') {
       cmd = `powershell -Command "Get-CimInstance Win32_Process -Filter 'Name = ''chrome.exe''' | Where-Object { $_.CommandLine -like '*${workspaceId}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"`;
     } else {
       cmd = `pgrep -f "${workspaceId}" | xargs kill -9`;
     }
-    execSync(cmd, { stdio: 'ignore' });
-    logInfo(workspaceId, `Targeted Chrome processes terminated.`);
-  } catch (procErr) {
-    // Ignore errors if no process is found
-  }
+
+    exec(cmd, { timeout: 4000 }, () => {
+      resolve();
+    });
+  });
+
+  const processTimeoutPromise = new Promise((resolve) => {
+    setTimeout(() => {
+      logError(workspaceId, `WARNING: Process cleanup phase timed out. Proceeding with folder deletion.`);
+      resolve();
+    }, 6000);
+  });
+
+  // Race process kill against 6s timeout
+  await Promise.race([processKillPromise, processTimeoutPromise]);
 
   // 2. Identify folders to clean
   const sessionDir = path.join(__dirname, '..', 'sessions');
@@ -705,36 +749,48 @@ const cleanSessionFolder = (workspaceId) => {
   const cwdAuthPath = path.join(process.cwd(), '.wwebjs_auth');
   const cwdCachePath = path.join(process.cwd(), '.wwebjs_cache');
   
-  const foldersToClean = [
-    sessionPath,
-    path.join(sessionDir, '.wwebjs_auth', `session-${workspaceId}`),
-    path.join(sessionDir, '.wwebjs_cache'),
-    authPathDefault,
-    cachePathDefault,
-    cwdAuthPath,
-    cwdCachePath
-  ];
-  
-  for (const folder of foldersToClean) {
-    if (fs.existsSync(folder)) {
-      try {
-        logInfo(workspaceId, `Cleaning up session folder: ${folder}`);
-        fs.rmSync(folder, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-      } catch (e) {
-        logError(workspaceId, `Failed to delete folder ${folder}: ${e.message}`);
+  // 3. Delete folders with a 5-second timeout guard using async fs.promises.rm
+  const folderDeletionPromise = (async () => {
+    const foldersToClean = [
+      sessionPath,
+      path.join(sessionDir, '.wwebjs_auth', `session-${workspaceId}`),
+      path.join(sessionDir, '.wwebjs_cache'),
+      authPathDefault,
+      cachePathDefault,
+      cwdAuthPath,
+      cwdCachePath
+    ];
+    
+    for (const folder of foldersToClean) {
+      if (fs.existsSync(folder)) {
+        try {
+          logInfo(workspaceId, `Cleaning up session folder: ${folder}`);
+          await fs.promises.rm(folder, { recursive: true, force: true });
+        } catch (e) {
+          logError(workspaceId, `Failed to delete folder ${folder}: ${e.message}`);
+        }
       }
     }
-  }
 
-  const mockSessionPath = path.join(sessionDir, `mock-session-${workspaceId}.json`);
-  if (fs.existsSync(mockSessionPath)) {
-    try {
-      logInfo(workspaceId, `Cleaning up mock session file: ${mockSessionPath}`);
-      fs.unlinkSync(mockSessionPath);
-    } catch (e) {
-      logError(workspaceId, `Failed to delete mock session: ${e.message}`);
+    const mockSessionPath = path.join(sessionDir, `mock-session-${workspaceId}.json`);
+    if (fs.existsSync(mockSessionPath)) {
+      try {
+        logInfo(workspaceId, `Cleaning up mock session file: ${mockSessionPath}`);
+        fs.unlinkSync(mockSessionPath);
+      } catch (e) {
+        logError(workspaceId, `Failed to delete mock session: ${e.message}`);
+      }
     }
-  }
+  })();
+
+  const folderTimeoutPromise = new Promise((resolve) => {
+    setTimeout(() => {
+      logError(workspaceId, `WARNING: Folder deletion phase timed out.`);
+      resolve();
+    }, 5000);
+  });
+
+  await Promise.race([folderDeletionPromise, folderTimeoutPromise]);
 };
 
 // Helper to check if a saved session exists on disk
@@ -1011,7 +1067,7 @@ const initClient = async (workspaceId, forceRestart = false) => {
       }
       clients.delete(workspaceId);
     }
-    cleanSessionFolder(workspaceId);
+    await cleanSessionFolder(workspaceId);
   }
 
   if (process.env.MOCK_WHATSAPP === 'true') {
@@ -1239,14 +1295,32 @@ const initClient = async (workspaceId, forceRestart = false) => {
 
     clients.set(workspaceId, client);
 
+    let pidCaptureInterval = setInterval(() => {
+      if (client && client.pupBrowser) {
+        const proc = client.pupBrowser.process();
+        if (proc && proc.pid) {
+          logInfo(workspaceId, `Captured active Puppeteer Chrome PID: ${proc.pid}`);
+          activePids.set(workspaceId, proc.pid);
+          clearInterval(pidCaptureInterval);
+        }
+      }
+    }, 1000);
+
     const initTimeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
+        clearInterval(pidCaptureInterval);
         reject(new Error('Restoration Timed Out. Clear stale cache and restart connection.'));
       }, 30000);
     });
 
     await Promise.race([
-      client.initialize(),
+      client.initialize().then((res) => {
+        clearInterval(pidCaptureInterval);
+        if (client.pupBrowser && client.pupBrowser.process()) {
+          activePids.set(workspaceId, client.pupBrowser.process().pid);
+        }
+        return res;
+      }),
       initTimeoutPromise
     ]);
 
@@ -1265,7 +1339,7 @@ const initClient = async (workspaceId, forceRestart = false) => {
       }
     }
     
-    cleanSessionFolder(workspaceId);
+    await cleanSessionFolder(workspaceId);
     
     const targetStatus = isRestoring ? 'Session expired, generating new QR' : 'Disconnected';
     const errorMsg = `Browser failed to start: ${err.message || err}`;
@@ -1308,7 +1382,7 @@ const logoutClient = async (workspaceId) => {
     }
     clients.delete(workspaceId);
   }
-  cleanSessionFolder(workspaceId); // Always clean session folder on logout/disconnect
+  await cleanSessionFolder(workspaceId); // Always clean session folder on logout/disconnect
   
   await WhatsAppSession.update(
     { status: 'Disconnected', qrCode: null },
