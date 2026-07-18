@@ -67,22 +67,52 @@ exports.startCampaign = async (req, res) => {
     }
 
     // Resolve target contacts
+    const { inboundDays } = req.body;
     let contacts = [];
-    if (campaign.targetGroup === 'All') {
-      contacts = await Contact.findAll({ where: { workspaceId } });
+    const { Op } = require('sequelize');
+    const { MessageLog } = require('../models');
+
+    // Build query conditions enforcing consent and prior inbound history
+    const whereClause = {
+      workspaceId,
+      isOptedOut: false
+    };
+
+    if (inboundDays && inboundDays !== 'All') {
+      const nDaysAgo = new Date();
+      nDaysAgo.setDate(nDaysAgo.getDate() - parseInt(inboundDays, 10));
+      whereClause.lastInboundMessageTime = {
+        [Op.gte]: nDaysAgo
+      };
     } else {
-      // Find by tags containing the group name
-      const { Op } = require('sequelize');
-      contacts = await Contact.findAll({
+      // Must have real inbound conversation history at some point, preventing cold numbers
+      whereClause.lastInboundMessageTime = {
+        [Op.ne]: null
+      };
+    }
+
+    if (campaign.targetGroup && campaign.targetGroup !== 'All') {
+      whereClause.tags = { [Op.like]: `%${campaign.targetGroup}%` };
+    }
+
+    const allMatchedContacts = await Contact.findAll({ where: whereClause });
+
+    // Filter out contacts who have already received this campaign (replay-safety)
+    for (const contact of allMatchedContacts) {
+      const alreadySent = await MessageLog.findOne({
         where: {
           workspaceId,
-          tags: { [Op.like]: `%${campaign.targetGroup}%` }
+          campaignId: campaign.id,
+          contactId: contact.id
         }
       });
+      if (!alreadySent) {
+        contacts.push(contact);
+      }
     }
 
     if (contacts.length === 0) {
-      return res.status(400).json({ error: 'No contacts found matching the target group' });
+      return res.status(400).json({ error: 'No new or non-opted-out contacts found matching the target filters' });
     }
 
     // Create Message Queue entries

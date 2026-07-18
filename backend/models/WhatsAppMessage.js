@@ -75,6 +75,15 @@ const WhatsAppMessage = sequelize.define('WhatsAppMessage', {
   isStarred: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
+  },
+  status: {
+    type: DataTypes.ENUM('sent', 'delivered', 'read', 'failed', 'pending'),
+    defaultValue: 'sent',
+  },
+  contactId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'contact_id'
   }
 }, {
   timestamps: true,

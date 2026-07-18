@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WhatsApp Integration Hub | AO-CRM</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .qr-scanner-glow {
+            box-shadow: 0 0 20px rgba(37, 211, 102, 0.4);
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background: #25D366;
+            position: absolute;
+            top: 0;
+            left: 0;
+            animation: scan 3s linear infinite;
+            box-shadow: 0 0 8px #25D366;
+        }
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container-high": "#dce9ff",
+                      "on-surface-variant": "#40484f",
+                      "inverse-on-surface": "#eaf1ff",
+                      "secondary-fixed-dim": "#3de273",
+                      "surface-dim": "#cbdbf5",
+                      "surface-container-low": "#eff4ff",
+                      "outline-variant": "#bfc7d0",
+                      "on-tertiary-fixed": "#161c27",
+                      "inverse-surface": "#213145",
+                      "on-secondary-fixed-variant": "#005322",
+                      "surface-tint": "#006491",
+                      "error": "#ba1a1a",
+                      "on-secondary": "#ffffff",
+                      "on-primary-fixed-variant": "#004c6e",
+                      "on-tertiary-fixed-variant": "#414754",
+                      "background": "#f8f9ff",
+                      "tertiary-container": "#696f7e",
+                      "surface-container": "#e5eeff",
+                      "on-secondary-fixed": "#002109",
+                      "surface-container-highest": "#d3e4fe",
+                      "primary-fixed": "#c9e6ff",
+                      "primary": "#005c86",
+                      "primary-container": "#0e76a8",
+                      "inverse-primary": "#8aceff",
+                      "surface": "#f8f9ff",
+                      "surface-variant": "#d3e4fe",
+                      "surface-bright": "#f8f9ff",
+                      "on-secondary-container": "#007232",
+                      "on-tertiary-container": "#f0f3ff",
+                      "on-error": "#ffffff",
+                      "primary-fixed-dim": "#8aceff",
+                      "outline": "#707880",
+                      "on-surface": "#0b1c30",
+                      "error-container": "#ffdad6",
+                      "on-primary-fixed": "#001e2f",
+                      "tertiary-fixed": "#dde2f3",
+                      "secondary": "#25D366",
+                      "on-secondary-container": "#007232",
+                      "on-tertiary": "#ffffff",
+                      "tertiary": "#515765",
+                      "tertiary-fixed-dim": "#c1c6d7",
+                      "on-error-container": "#93000a",
+                      "on-primary": "#ffffff",
+                      "secondary-fixed": "#66ff8e",
+                      "secondary-container": "#5dfd8a",
+                      "on-background": "#0b1c30"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "container-max": "1440px",
+                      "gutter": "16px",
+                      "xl": "32px",
+                      "lg": "24px",
+                      "md": "16px",
+                      "base": "4px",
+                      "sm": "8px",
+                      "xs": "4px",
+                      "sidebar-width": "260px"
+              },
+              "fontFamily": {
+                      "label-md": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "headline-sm": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "display-lg": ["Inter"],
+                      "display-lg-mobile": ["Inter"],
+                      "body-md": ["Inter"],
+                      "mono-sm": ["JetBrains Mono"],
+                      "body-sm": ["Inter"]
+              },
+              "fontSize": {
+                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "headline-sm": ["18px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "display-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "mono-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                      "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="flex justify-between items-center w-full px-lg h-16 bg-surface border-b border-outline-variant fixed top-0 z-40">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary cursor-pointer active:scale-95 transition-transform" data-icon="menu">menu</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">AO-CRM</h1>
+</div>
+<div class="flex items-center gap-md">
+<div class="flex items-center gap-sm px-md py-1.5 rounded-full bg-surface-container-low border border-outline-variant">
+<span class="w-2.5 h-2.5 rounded-full bg-outline animate-pulse"></span>
+<span class="font-label-md text-label-md text-on-surface-variant">WhatsApp: Disconnected</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container-high p-2 rounded-full transition-colors" data-icon="notifications">notifications</span>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-white font-bold text-xs">AM</div>
+</div>
+</header>
+<!-- Sidebar Navigation (Desktop) -->
+<aside class="fixed left-0 top-0 h-full w-sidebar-width bg-inverse-surface hidden md:flex flex-col gap-xs p-md pt-20 z-30 shadow-md">
+<div class="flex flex-col gap-xs mb-lg">
+<div class="flex items-center gap-md p-md text-surface-variant hover:text-surface-container-lowest hover:bg-surface-container-highest/10 transition-all cursor-pointer rounded-lg">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md">Dashboard</span>
+</div>
+<div class="flex items-center gap-md p-md text-surface-variant hover:text-surface-container-lowest hover:bg-surface-container-highest/10 transition-all cursor-pointer rounded-lg">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-body-md">Leads</span>
+</div>
+<div class="flex items-center gap-md p-md bg-primary-container text-on-primary-container rounded-lg mx-0 transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="chat" style="font-variation-settings: 'FILL' 1;">chat</span>
+<span class="font-body-md">WhatsApp</span>
+</div>
+<div class="flex items-center gap-md p-md text-surface-variant hover:text-surface-container-lowest hover:bg-surface-container-highest/10 transition-all cursor-pointer rounded-lg">
+<span class="material-symbols-outlined" data-icon="view_column">view_column</span>
+<span class="font-body-md">Pipeline</span>
+</div>
+<div class="flex items-center gap-md p-md text-surface-variant hover:text-surface-container-lowest hover:bg-surface-container-highest/10 transition-all cursor-pointer rounded-lg">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+<span class="font-body-md">Tasks</span>
+</div>
+</div>
+<div class="mt-auto border-t border-white/10 pt-md">
+<div class="flex items-center gap-md p-md text-surface-variant hover:text-surface-container-lowest hover:bg-surface-container-highest/10 transition-all cursor-pointer rounded-lg">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md">Settings</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-sidebar-width pt-20 pb-20 md:pb-8 px-md md:px-lg flex items-center justify-center relative overflow-hidden">
+<!-- Atmospheric Background Pattern -->
+<div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: radial-gradient(#005c86 1px, transparent 1px); background-size: 24px 24px;"></div>
+<!-- Connection Flow Container -->
+<div class="w-full max-w-4xl bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant grid md:grid-cols-12 overflow-hidden relative z-10">
+<!-- Left Side: Instructions -->
+<div class="md:col-span-5 p-lg md:p-xl bg-surface-container-low/50 flex flex-col">
+<div class="mb-lg">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-error-container text-on-error-container rounded-full text-[10px] font-bold uppercase tracking-wider mb-4">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+                        Service Offline
+                    </div>
+<h2 class="font-display-lg text-display-lg-mobile md:text-display-lg text-primary mb-2">Link WhatsApp</h2>
+<p class="text-on-surface-variant font-body-md leading-relaxed">
+                        To synchronize your AO-CRM leads with your WhatsApp Business account, scan the QR code using your mobile device.
+                    </p>
+</div>
+<div class="space-y-6">
+<div class="flex gap-md items-start group">
+<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold text-sm group-hover:scale-110 transition-transform">1</div>
+<p class="text-on-surface font-body-md pt-1">Open <strong>WhatsApp</strong> on your phone</p>
+</div>
+<div class="flex gap-md items-start group">
+<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold text-sm group-hover:scale-110 transition-transform">2</div>
+<p class="text-on-surface font-body-md pt-1">Tap <strong>Menu</strong> (Android) or <strong>Settings</strong> (iOS)</p>
+</div>
+<div class="flex gap-md items-start group">
+<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold text-sm group-hover:scale-110 transition-transform">3</div>
+<p class="text-on-surface font-body-md pt-1">Select <strong>Linked Devices</strong> and tap <strong>Link a Device</strong></p>
+</div>
+<div class="flex gap-md items-start group">
+<div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold text-sm group-hover:scale-110 transition-transform">4</div>
+<p class="text-on-surface font-body-md pt-1">Point your camera at the QR code on the right</p>
+</div>
+</div>
+<div class="mt-auto pt-lg border-t border-outline-variant/30 hidden md:block">
+<div class="flex items-center gap-sm text-on-surface-variant opacity-70">
+<span class="material-symbols-outlined text-sm" data-icon="lock">lock</span>
+<span class="text-xs font-label-md">End-to-end encrypted connection</span>
+</div>
+</div>
+</div>
+<!-- Right Side: QR Flow -->
+<div class="md:col-span-7 p-lg md:p-xl bg-white flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-outline-variant/50">
+<!-- Phone & QR Illustration Group -->
+<div class="relative w-full max-w-[320px] aspect-square flex items-center justify-center mb-lg">
+<!-- QR Frame -->
+<div class="relative p-4 bg-white border-4 border-surface-container-high rounded-xl qr-scanner-glow transition-all duration-500">
+<img class="w-48 h-48 md:w-56 md:h-56 object-cover rounded-sm" data-alt="A clean, minimalist high-contrast QR code centered on a white square background. The design is sleek and professional, featuring the AO-CRM blue and WhatsApp green brand colors in the corner patterns. The style is modern SaaS corporate aesthetic with soft studio lighting and extreme clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkWX6GYoyjMBpSLZh5yR8wzOoAHizGJdr1vHmxynudl0AU7E_74e6Ih-wEPR4CQV_R5ajAzGXYnwPGTueMs8_YWjIpKkZ3XlKmrbAP7pqB1QOOJAGAncJCY1EeOaZdHjUGfHUFsl-Y6YUu4wHnKpPHHObHk75_rKrTp0O5FqPL7yERuTwQV6Uh0NO-1EksPCGBde6HE1QlFi6c7ZIeKF6wzGE82ZYXlLPLuzU_GTtwW59EhvLUkM8H41d01idQxa3JIRQQRVRW4utD"/>
+<!-- Animated Scanning Line -->
+<div class="scan-line"></div>
+<!-- Corner Accents -->
+<div class="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-secondary rounded-tl-lg"></div>
+<div class="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-secondary rounded-tr-lg"></div>
+<div class="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-secondary rounded-bl-lg"></div>
+<div class="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-secondary rounded-br-lg"></div>
+</div>
+<!-- Floating Phone Mockup (Decorative) -->
+<div class="absolute -right-4 -bottom-4 w-24 h-44 bg-inverse-surface rounded-[24px] border-[3px] border-outline p-1 hidden lg:block rotate-12 shadow-xl animate-bounce" style="animation-duration: 4s;">
+<div class="w-full h-full bg-surface-dim rounded-[20px] flex items-center justify-center overflow-hidden">
+<div class="w-12 h-12 bg-secondary/20 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-3xl" data-icon="photo_camera" style="font-variation-settings: 'FILL' 1;">photo_camera</span>
+</div>
+</div>
+<div class="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-outline-variant rounded-full"></div>
+</div>
+</div>
+<!-- Timer and Actions -->
+<div class="w-full max-w-[280px] text-center">
+<div class="flex items-center justify-center gap-md mb-md">
+<div class="flex flex-col items-center">
+<span class="font-mono-sm text-headline-sm text-on-surface-variant font-bold" id="timer">01:45</span>
+<span class="text-[10px] text-outline font-bold uppercase">Valid For</span>
+</div>
+<div class="w-px h-8 bg-outline-variant"></div>
+<button class="flex flex-col items-center group cursor-pointer active:scale-95 transition-all">
+<span class="material-symbols-outlined text-primary group-hover:rotate-180 transition-transform duration-500" data-icon="refresh">refresh</span>
+<span class="text-[10px] text-primary font-bold uppercase">Refresh QR</span>
+</button>
+</div>
+<button class="w-full py-4 bg-primary text-on-primary font-bold rounded-lg shadow-md hover:bg-primary-container active:scale-95 transition-all flex items-center justify-center gap-md">
+<span>Waiting for scan...</span>
+<div class="flex gap-1">
+<span class="w-1 h-1 bg-white rounded-full animate-bounce" style="animation-delay: 0s;"></span>
+<span class="w-1 h-1 bg-white rounded-full animate-bounce" style="animation-delay: 0.2s;"></span>
+<span class="w-1 h-1 bg-white rounded-full animate-bounce" style="animation-delay: 0.4s;"></span>
+</div>
+</button>
+<p class="mt-4 text-body-sm text-outline">
+                        Trouble scanning? <a class="text-primary hover:underline font-medium" href="#">Link with phone number instead</a>
+</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="md:hidden flex justify-around items-center h-16 bg-surface border-t border-outline-variant fixed bottom-0 w-full z-50 rounded-t-xl shadow-lg px-4">
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-label-md">Leads</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 scale-90">
+<span class="material-symbols-outlined" data-icon="chat" style="font-variation-settings: 'FILL' 1;">chat</span>
+<span class="font-label-md text-label-md">WhatsApp</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="view_column">view_column</span>
+<span class="font-label-md text-label-md">Pipeline</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+<span class="font-label-md text-label-md">Tasks</span>
+</div>
+</nav>
+<script>
+        // Micro-interaction for the countdown timer
+        let timeLeft = 105; // 1:45 in seconds
+        const timerElement = document.getElementById('timer');
+
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            timerElement.innerHTML = `0${minutes}:${seconds}`;
+            
+            if (timeLeft > 0) {
+                timeLeft--;
+            } else {
+                // Auto-refresh logic could go here
+                timeLeft = 105;
+            }
+        }
+
+        setInterval(updateTimer, 1000);
+
+        // Sidebar Active state logic
+        document.querySelectorAll('aside .flex-shrink-0').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('aside .bg-primary-container').forEach(el => {
+                    el.classList.remove('bg-primary-container', 'text-on-primary-container');
+                    el.classList.add('text-surface-variant');
+                });
+                this.classList.add('bg-primary-container', 'text-on-primary-container');
+                this.classList.remove('text-surface-variant');
+            });
+        });
+    </script>
+</body></html>

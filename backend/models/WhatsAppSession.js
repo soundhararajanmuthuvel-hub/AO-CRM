@@ -16,7 +16,7 @@ const WhatsAppSession = sequelize.define('WhatsAppSession', {
     defaultValue: 'Primary Connection',
   },
   status: {
-    type: DataTypes.ENUM('Initializing', 'QR Ready', 'Authenticating', 'Connected', 'Disconnected', 'Reconnecting', 'READY'),
+    type: DataTypes.STRING,
     defaultValue: 'Disconnected',
   },
   qrCode: {
@@ -26,6 +26,19 @@ const WhatsAppSession = sequelize.define('WhatsAppSession', {
   sessionData: {
     type: DataTypes.TEXT,
     allowNull: true,
+  },
+  lastError: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  reconnectAttempts: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  syncStats: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'sync_stats'
   },
 }, {
   timestamps: true,

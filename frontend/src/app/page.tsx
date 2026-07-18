@@ -279,8 +279,8 @@ curl_close($curl);`;
       <header className="sticky top-0 bg-[#0A0C14]/85 backdrop-blur-md border-b border-neutral-900 z-40 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-6.5 h-6.5 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-neutral-950 font-black text-sm">W</span>
-            <span className="text-lg font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">WHATSFLOW AI</span>
+            <span className="w-6.5 h-6.5 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-neutral-950 font-black text-sm">C</span>
+            <span className="text-lg font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">CUSMAN CRM</span>
           </div>
 
           <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-neutral-400">
@@ -926,11 +926,11 @@ curl_close($curl);`;
       {/* Footer */}
       <footer className="py-12 border-t border-neutral-900 bg-neutral-950 flex flex-col items-center justify-center gap-4 text-center text-xs text-neutral-500">
         <div className="flex items-center gap-2">
-          <span className="w-6 h-6 rounded-md bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-neutral-950 font-black text-xs">W</span>
-          <span className="text-sm font-black tracking-widest text-neutral-300">WHATSFLOW AI</span>
+          <span className="w-6 h-6 rounded-md bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-neutral-950 font-black text-xs">C</span>
+          <span className="text-sm font-black tracking-widest text-neutral-300">CUSMAN CRM</span>
         </div>
-        <p className="max-w-md leading-relaxed text-neutral-500">Professional, AI-Powered WhatsApp Automation & Developer APIs Platform.</p>
-        <p>&copy; {new Date().getFullYear()} WhatsFlow AI. All rights reserved.</p>
+        <p className="max-w-md leading-relaxed text-neutral-500">Professional, AI-Powered WhatsApp CRM & Developer APIs Platform.</p>
+        <p>&copy; {new Date().getFullYear()} Cusman CRM. All rights reserved.</p>
       </footer>
 
     </div>

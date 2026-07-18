@@ -255,6 +255,99 @@ const startServer = async () => {
     
     console.log('[Startup Validation] Database connected successfully.');
 
+    // Custom SQLite column migrations (SQLite sync alter fallback)
+    if (sequelize.options.dialect === 'sqlite') {
+      try {
+        await sequelize.query("ALTER TABLE WhatsAppSessions ADD COLUMN lastError TEXT;");
+        console.log('[Startup Migrations] Added lastError to WhatsAppSessions.');
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE WhatsAppSessions ADD COLUMN reconnectAttempts INTEGER DEFAULT 0;");
+        console.log('[Startup Migrations] Added reconnectAttempts to WhatsAppSessions.');
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE WhatsAppMessages ADD COLUMN status TEXT DEFAULT 'sent';");
+        console.log('[Startup Migrations] Added status to WhatsAppMessages.');
+      } catch (e) {}
+
+      // Phase 5 & 6 Migrations
+      try {
+        await sequelize.query("ALTER TABLE Contacts ADD COLUMN isOptedOut BOOLEAN DEFAULT 0;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Contacts ADD COLUMN is_opted_out BOOLEAN DEFAULT 0;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Contacts ADD COLUMN lastInboundMessageTime DATETIME;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Contacts ADD COLUMN last_inbound_message_time DATETIME;");
+      } catch (e) {}
+
+      try {
+        await sequelize.query("ALTER TABLE Workspaces ADD COLUMN broadcastDailyCap INTEGER DEFAULT 500;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Workspaces ADD COLUMN broadcast_daily_cap INTEGER DEFAULT 500;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Workspaces ADD COLUMN broadcastMinDelay INTEGER DEFAULT 3;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Workspaces ADD COLUMN broadcast_min_delay INTEGER DEFAULT 3;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Workspaces ADD COLUMN broadcastMaxDelay INTEGER DEFAULT 8;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Workspaces ADD COLUMN broadcast_max_delay INTEGER DEFAULT 8;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Workspaces ADD COLUMN aiAutoReplyEnabled BOOLEAN DEFAULT 1;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Workspaces ADD COLUMN ai_auto_reply_enabled BOOLEAN DEFAULT 1;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Workspaces ADD COLUMN aiConfidenceThreshold FLOAT DEFAULT 0.7;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Workspaces ADD COLUMN ai_confidence_threshold FLOAT DEFAULT 0.7;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Workspaces ADD COLUMN aiSystemPrompt TEXT;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Workspaces ADD COLUMN ai_system_prompt TEXT;");
+      } catch (e) {}
+
+      // Phase 8 Migrations
+      try {
+        await sequelize.query("ALTER TABLE Contacts ADD COLUMN isSynced BOOLEAN DEFAULT 0;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE Contacts ADD COLUMN is_synced BOOLEAN DEFAULT 0;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE WhatsAppChats ADD COLUMN contactId CHAR(36);");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE WhatsAppChats ADD COLUMN contact_id CHAR(36);");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE WhatsAppMessages ADD COLUMN contactId CHAR(36);");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE WhatsAppMessages ADD COLUMN contact_id CHAR(36);");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE WhatsAppSessions ADD COLUMN syncStats TEXT;");
+      } catch (e) {}
+      try {
+        await sequelize.query("ALTER TABLE WhatsAppSessions ADD COLUMN sync_stats TEXT;");
+      } catch (e) {}
+    }
+
     // Sync models safely (sqlite dialect cannot alter tables with foreign keys)
     if (sequelize.options.dialect === 'sqlite') {
       await sequelize.sync();

@@ -33,6 +33,12 @@ interface Workspace {
   apiKey?: string;
   apiSecret?: string;
   webhookUrl?: string;
+  broadcastDailyCap?: number;
+  broadcastMinDelay?: number;
+  broadcastMaxDelay?: number;
+  aiAutoReplyEnabled?: boolean;
+  aiConfidenceThreshold?: number;
+  aiSystemPrompt?: string;
 }
 
 interface AuthContextType {

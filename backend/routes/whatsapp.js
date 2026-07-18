@@ -34,5 +34,6 @@ router.post('/chats/sales-status', whatsappController.changeChatSalesStatus);
 router.put('/chats/:chatId/pin', whatsappController.togglePinChat);
 router.put('/chats/:chatId/archive', whatsappController.toggleArchiveChat);
 router.put('/messages/:messageId/star', whatsappController.toggleStarMessage);
+router.post('/messages/:messageId/flag', whatsappController.flagMessageLog);
 
 module.exports = router;

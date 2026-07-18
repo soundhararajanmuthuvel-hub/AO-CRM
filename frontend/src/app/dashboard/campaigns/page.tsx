@@ -46,6 +46,7 @@ export default function CampaignsPage() {
 
   // Modals & Forms
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<Record<string, string>>({});
   const [name, setName] = useState('');
   const [type, setType] = useState<'Marketing' | 'Follow-Up' | 'Reminder' | 'Greetings'>('Marketing');
   const [templateId, setTemplateId] = useState('');
@@ -105,12 +106,12 @@ export default function CampaignsPage() {
     }
   };
 
-  const handleStart = async (id: string, campaignName: string) => {
+  const handleStart = async (id: string, campaignName: string, days: string) => {
     try {
       setError('');
       setSuccess('');
-      await api.post(`/campaigns/${id}/start`);
-      setSuccess(`Campaign "${campaignName}" launched and queue populated.`);
+      await api.post(`/campaigns/${id}/start`, { inboundDays: days });
+      setSuccess(`Campaign "${campaignName}" launched (Engagement Filter: ${days} days).`);
       loadData();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to launch campaign. Verify WhatsApp status is connected.');
@@ -238,12 +239,25 @@ export default function CampaignsPage() {
                   {/* Action Controls Column */}
                   <div className="flex items-center justify-end gap-2 md:col-span-1">
                     {camp.status === 'Draft' && (
-                      <button
-                        onClick={() => handleStart(camp.id, camp.name)}
-                        className="px-4 py-2 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 flex items-center gap-1.5 transition-all shadow-md shadow-primary/5"
-                      >
-                        <Play className="w-3.5 h-3.5" /> Start
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={selectedDays[camp.id] || '30'}
+                          onChange={(e) => setSelectedDays({ ...selectedDays, [camp.id]: e.target.value })}
+                          className="px-2 py-1.5 rounded-xl text-[10px] bg-neutral-950 border border-neutral-800 focus:outline-none focus:border-primary text-neutral-450 font-bold cursor-pointer"
+                        >
+                          <option value="7">Last 7 Days</option>
+                          <option value="15">Last 15 Days</option>
+                          <option value="30">Last 30 Days</option>
+                          <option value="90">Last 90 Days</option>
+                          <option value="All">All History</option>
+                        </select>
+                        <button
+                          onClick={() => handleStart(camp.id, camp.name, selectedDays[camp.id] || '30')}
+                          className="px-4 py-2 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 flex items-center gap-1.5 transition-all shadow-md shadow-primary/5 cursor-pointer"
+                        >
+                          <Play className="w-3.5 h-3.5" /> Start
+                        </button>
+                      </div>
                     )}
 
                     {camp.status === 'Running' && (

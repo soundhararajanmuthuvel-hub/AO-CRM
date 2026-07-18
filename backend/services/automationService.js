@@ -1,4 +1,4 @@
-const { Contact, AutomationRule, MessageTemplate, MessageQueue, MessageLog } = require('../models');
+const { Contact, AutomationRule, MessageTemplate, MessageQueue, MessageLog, WhatsAppSession } = require('../models');
 const { Op } = require('sequelize');
 
 const start = () => {
@@ -9,10 +9,28 @@ const start = () => {
     try {
       await triggerBirthdays();
       await triggerInactivityChecks();
+      await triggerPostPurchaseCheckinsForAllWorkspaces();
     } catch (err) {
       console.error('[Automation Service] Run error:', err);
     }
   }, 60 * 60 * 1000); // 1 hour interval
+};
+
+const triggerPostPurchaseCheckinsForAllWorkspaces = async () => {
+  try {
+    const { getClient } = require('./whatsappService');
+    const { triggerPostPurchaseCheckins } = require('./advocacyService');
+
+    const sessions = await WhatsAppSession.findAll({ where: { status: 'READY' } });
+    for (const session of sessions) {
+      const client = getClient(session.workspaceId);
+      if (client) {
+        await triggerPostPurchaseCheckins(session.workspaceId, client);
+      }
+    }
+  } catch (err) {
+    console.error('[Automation Service] Error running post-purchase check-ins:', err);
+  }
 };
 
 const triggerBirthdays = async () => {
@@ -74,6 +92,15 @@ const triggerBirthdays = async () => {
           status: 'Pending'
         });
         console.log(`[Automation Service] Birthday greeting queued for ${contact.name} (${contact.phone})`);
+        
+        try {
+          const { AuditLog } = require('../models');
+          await AuditLog.create({
+            workspaceId,
+            action: 'AUTOMATION_TRIGGER',
+            details: { ruleType: 'Birthday', ruleId: rule.id, contactId: contact.id, phone: contact.phone }
+          });
+        } catch (e) {}
       }
     }
   }
@@ -148,6 +175,15 @@ const triggerInactivityChecks = async () => {
               status: 'Pending'
             });
             console.log(`[Automation Service] ${interval.label} purchase inactivity follow-up queued for ${contact.name}`);
+
+            try {
+              const { AuditLog } = require('../models');
+              await AuditLog.create({
+                workspaceId,
+                action: 'AUTOMATION_TRIGGER',
+                details: { ruleType: interval.type, ruleId: rule.id, contactId: contact.id, phone: contact.phone }
+              });
+            } catch (e) {}
           }
         }
       }
@@ -160,6 +196,7 @@ const runSimulationNow = async (workspaceId) => {
   console.log(`[Automation Service] Forcing direct run simulation for workspace ${workspaceId}`);
   await triggerBirthdays();
   await triggerInactivityChecks();
+  await triggerPostPurchaseCheckinsForAllWorkspaces();
 };
 
 module.exports = {

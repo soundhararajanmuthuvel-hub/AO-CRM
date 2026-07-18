@@ -66,8 +66,8 @@ export default function SignupPage() {
         {/* Header */}
         <div className="text-center space-y-3">
           <div className="flex items-center justify-center gap-2">
-            <span className="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-neutral-950 font-black text-sm">W</span>
-            <span className="text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">WHATSFLOW AI</span>
+            <span className="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-neutral-950 font-black text-sm">C</span>
+            <span className="text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">CUSMAN CRM</span>
           </div>
           <p className="text-xs text-neutral-400">Initialize a free multi-tenant workspace environment.</p>
         </div>

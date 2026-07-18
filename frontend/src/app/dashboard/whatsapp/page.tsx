@@ -58,6 +58,9 @@ export default function WhatsAppDashboardPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [connectionInfo, setConnectionInfo] = useState<any>(null);
+  const [syncStats, setSyncStats] = useState<any>(null);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [restoreTimeLeft, setRestoreTimeLeft] = useState(30);
 
   // API Explorer Console States
   const [testPhone, setTestPhone] = useState('1234567890');
@@ -94,6 +97,51 @@ export default function WhatsAppDashboardPage() {
   const [successAlert, setSuccessAlert] = useState('');
   const [copiedKey, setCopiedKey] = useState(false);
 
+  // QR Expiration Timer
+  const [timeLeft, setTimeLeft] = useState(105);
+  
+  useEffect(() => {
+    if (status !== 'QR Ready' || !qrCode) return;
+    
+    setTimeLeft(105);
+    const timerId = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerId);
+          handleConnect();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [qrCode, status]);
+
+  useEffect(() => {
+    if (status !== 'Restoring previous session...') {
+      setRestoreTimeLeft(30);
+      return;
+    }
+    const timerId = setInterval(() => {
+      setRestoreTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerId);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [status]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const fetchSessionStatusAndLogs = async () => {
     try {
       const [statusRes, logsRes] = await Promise.all([
@@ -106,6 +154,16 @@ export default function WhatsAppDashboardPage() {
       setPhoneNumber(statusRes.data.phoneNumber);
       setPushname(statusRes.data.pushname);
       setLogs(logsRes.data);
+      setLastError(statusRes.data.lastError || null);
+      if (statusRes.data.syncStats) {
+        try {
+          setSyncStats(typeof statusRes.data.syncStats === 'string' ? JSON.parse(statusRes.data.syncStats) : statusRes.data.syncStats);
+        } catch (e) {
+          setSyncStats(statusRes.data.syncStats);
+        }
+      } else {
+        setSyncStats(null);
+      }
     } catch (err) {
       console.error('Failed to load WhatsApp session status:', err);
     } finally {
@@ -132,7 +190,7 @@ export default function WhatsAppDashboardPage() {
       query: { workspaceId: user.workspaceId }
     });
 
-    socket.on('status_change', (data: { status: string; qrCode: string | null; sessionExists?: boolean; phoneNumber?: string | null; pushname?: string | null }) => {
+    socket.on('status_change', (data: { status: string; qrCode: string | null; sessionExists?: boolean; phoneNumber?: string | null; pushname?: string | null; syncStats?: any; lastError?: string | null }) => {
       console.log('[WebSocket Status Notification]:', data);
       setStatus(data.status);
       setQrCode(data.qrCode);
@@ -145,17 +203,37 @@ export default function WhatsAppDashboardPage() {
       if (data.pushname !== undefined) {
         setPushname(data.pushname);
       }
-      if (data.status === 'Connected' || data.status === 'READY') {
+      if (data.syncStats !== undefined) {
+        try {
+          setSyncStats(typeof data.syncStats === 'string' ? JSON.parse(data.syncStats) : data.syncStats);
+        } catch (e) {
+          setSyncStats(data.syncStats);
+        }
+      }
+      if (data.lastError !== undefined) {
+        setLastError(data.lastError);
+      }
+      if (data.status === 'Connected' || data.status === 'READY' || data.status === 'Live' || data.status === 'Synced') {
         setSessionExists(true);
+        setLastError(null);
         api.get('/whatsapp/status').then(res => {
           setPhoneNumber(res.data.phoneNumber);
           setPushname(res.data.pushname);
+          if (res.data.syncStats) {
+            try {
+              setSyncStats(typeof res.data.syncStats === 'string' ? JSON.parse(res.data.syncStats) : res.data.syncStats);
+            } catch (e) {}
+          }
         }).catch(() => {});
         api.get('/whatsapp/logs').then(res => setLogs(res.data)).catch(() => {});
       } else if (data.status === 'Disconnected') {
         api.get('/whatsapp/session').then(res => setSessionExists(res.data.exists)).catch(() => {});
         setPhoneNumber(null);
         setPushname(null);
+        setSyncStats(null);
+        if (!data.lastError) {
+          setLastError(null);
+        }
       }
     });
 
@@ -369,8 +447,8 @@ export default function WhatsAppDashboardPage() {
     );
   }
 
-  const isConnected = status === 'Connected' || status === 'READY';
-  const isInitializing = status === 'Initializing' || status === 'Reconnecting';
+  const isConnected = status === 'Connected' || status === 'READY' || status === 'Live' || status === 'Synced';
+  const isInitializing = status === 'Initializing' || status === 'Reconnecting' || status === 'Connecting' || status.startsWith('Syncing') || status.startsWith('Restoring') || status === 'Session expired, generating new QR';
   const isAuthenticating = status === 'Authenticating';
   const isQR = status === 'QR Ready' && qrCode;
 
@@ -427,143 +505,230 @@ export default function WhatsAppDashboardPage() {
 
       {/* TAB CONTENT: LINKED DEVICE */}
       {activeTab === 'device' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Status card */}
-            <div className="p-6 rounded-2xl border border-neutral-900 bg-neutral-900/10 space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-neutral-200">Session Status</h3>
-                <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${
-                    isConnected ? 'bg-emerald-500 animate-pulse' : isInitializing || isAuthenticating ? 'bg-amber-500 animate-spin' : 'bg-red-500'
+        <div className="w-full bg-[#0F121D]/40 rounded-3xl border border-neutral-900 grid grid-cols-1 md:grid-cols-12 overflow-hidden relative z-10">
+          
+          {/* Left Side: Instructions (Split Grid 5 columns) */}
+          <div className="md:col-span-5 p-6 md:p-8 bg-[#090C15]/40 border-r border-neutral-900 flex flex-col justify-between text-left">
+            <div className="space-y-6">
+              {/* Service Status Badge */}
+              <div>
+                <div className={`inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4 border ${
+                  isConnected
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                    : isInitializing
+                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 animate-pulse'
+                    : 'bg-red-500/10 border-red-500/30 text-red-400'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${
+                    isConnected ? 'bg-emerald-500 animate-pulse' : isInitializing ? 'bg-amber-500' : 'bg-red-500'
                   }`} />
-                  <span className={`text-xs font-bold uppercase tracking-wider ${
-                    isConnected ? 'text-emerald-400' : isInitializing || isAuthenticating ? 'text-amber-500' : 'text-neutral-500'
-                  }`}>{status === 'READY' ? 'Connected' : status}</span>
+                  {status}
                 </div>
+                
+                <h2 className="text-xl font-bold tracking-tight text-neutral-100 mb-2">Link WhatsApp</h2>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  To synchronize your AO-CRM leads and automations with your WhatsApp Business account, scan the QR code using your mobile device.
+                </p>
               </div>
 
-              {/* Metrics Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="p-4 rounded-xl border border-neutral-900 bg-neutral-950/20 space-y-1">
-                  <span className="text-[10px] text-neutral-500 uppercase font-semibold">Health Score</span>
-                  <span className="text-lg font-black text-neutral-200 block">{isConnected ? '98%' : 'N/A'}</span>
-                </div>
-                <div className="p-4 rounded-xl border border-neutral-900 bg-neutral-950/20 space-y-1">
-                  <span className="text-[10px] text-neutral-500 uppercase font-semibold">Messages Today</span>
-                  <span className="text-lg font-black text-neutral-200 block">{isConnected ? logs.length : '0'}</span>
-                </div>
-                <div className="p-4 rounded-xl border border-neutral-900 bg-neutral-950/20 space-y-1">
-                  <span className="text-[10px] text-neutral-500 uppercase font-semibold">API Calls</span>
-                  <span className="text-lg font-black text-neutral-200 block">{workspace?.messageUsageThisMonth || 0}</span>
-                </div>
-                <div className="p-4 rounded-xl border border-neutral-900 bg-neutral-950/20 space-y-1">
-                  <span className="text-[10px] text-neutral-500 uppercase font-semibold">Device Battery</span>
-                  <span className="text-lg font-black text-neutral-200 block flex items-center gap-1.5">
-                    <Battery className="w-4 h-4 text-emerald-400" /> {isConnected ? '92%' : 'N/A'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Info details */}
-              {isConnected && (
-                <div className="p-4 rounded-xl border border-neutral-900 bg-neutral-950/40 text-xs space-y-2.5 animate-in fade-in">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-neutral-500 uppercase font-semibold">Linked Phone Number</span>
-                    <span className="font-bold text-neutral-200">
-                      {phoneNumber ? `+${phoneNumber.replace(/[^\d]/g, '')}` : '+91XXXXXXXXXX'}
-                    </span>
+              {/* Instructions steps */}
+              <div className="space-y-4 pt-4 border-t border-neutral-900/60">
+                {[
+                  { step: 1, text: <>Open <strong>WhatsApp</strong> on your phone</> },
+                  { step: 2, text: <>Tap <strong>Menu</strong> (Android) or <strong>Settings</strong> (iOS)</> },
+                  { step: 3, text: <>Select <strong>Linked Devices</strong> and tap <strong>Link a Device</strong></> },
+                  { step: 4, text: <>Point your camera at the QR code on the right</>}
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-3.5 items-start group">
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500 text-neutral-950 flex items-center justify-center font-bold text-xs group-hover:scale-110 transition-all">
+                      {item.step}
+                    </div>
+                    <p className="text-neutral-350 text-xs pt-0.5">{item.text}</p>
                   </div>
-                  <div className="flex justify-between items-center border-t border-neutral-900 pt-2.5">
-                    <span className="text-[10px] text-neutral-500 uppercase font-semibold">Device User Name</span>
-                    <span className="text-neutral-300 font-bold">{pushname || 'Primary Connection'}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-t border-neutral-900 pt-2.5">
-                    <span className="text-[10px] text-neutral-500 uppercase font-semibold">Browser Platform OS</span>
-                    <span className="text-neutral-400 font-mono">Chromium Linux sandboxed</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-neutral-900">
-                <button
-                  onClick={handleConnect}
-                  disabled={actionLoading}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer"
-                >
-                  <QrCode className="w-4 h-4" /> Link New Account (QR)
-                </button>
-                <button
-                  onClick={handleRestoreSession}
-                  disabled={actionLoading || !sessionExists}
-                  className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 border transition-all ${
-                    sessionExists
-                      ? 'bg-neutral-950 border-neutral-800 text-neutral-350 hover:bg-neutral-900 cursor-pointer'
-                      : 'bg-neutral-950/40 border-neutral-900/60 text-neutral-600 cursor-not-allowed'
-                  }`}
-                >
-                  <Database className="w-4 h-4" /> Restore Session Data
-                </button>
-                <button
-                  onClick={handleVerifyConnection}
-                  disabled={verifying}
-                  className="px-5 py-2.5 rounded-xl border border-neutral-800 bg-neutral-900/30 text-neutral-350 font-bold text-xs uppercase tracking-wider hover:bg-neutral-800 transition-all flex items-center gap-2 cursor-pointer"
-                >
-                  <CheckCircle className="w-4 h-4 text-emerald-400" /> {verifying ? 'Verifying Status...' : 'Verify Session'}
-                </button>
-                {isConnected && (
-                  <button
-                    onClick={handleLogout}
-                    disabled={actionLoading}
-                    className="ml-auto px-5 py-2.5 rounded-xl bg-red-950/20 border border-red-800/40 hover:bg-red-900/20 text-red-300 font-bold text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer"
-                  >
-                    <LogOut className="w-4 h-4" /> Disconnect
-                  </button>
-                )}
+                ))}
               </div>
             </div>
 
+            <div className="mt-8 pt-4 border-t border-neutral-900/60 hidden md:block">
+              <div className="flex items-center gap-2 text-neutral-500">
+                <ShieldCheck className="w-4 h-4 text-emerald-500/60" />
+                <span className="text-[10px] uppercase font-bold tracking-wide">End-to-end encrypted connection</span>
+              </div>
+            </div>
           </div>
 
-          {/* Right Column: Active QR Code Scan */}
-          <div className="lg:col-span-1">
-            {isQR ? (
-              <div className="p-6 rounded-2xl border border-neutral-900 bg-neutral-900/10 space-y-4 animate-in slide-in-from-right-4 duration-300">
-                <h3 className="font-bold text-neutral-250 flex items-center gap-1.5 text-xs uppercase tracking-wider">
-                  <QrCode className="w-4 h-4 text-emerald-400" /> Active QR Scanner
-                </h3>
-                <div className="flex flex-col items-center gap-4 p-4 rounded-xl border border-neutral-900 bg-neutral-950/30">
-                  <div className="p-3 bg-white rounded-lg shadow-inner">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={qrCode}
-                      alt="WhatsApp Login QR Code"
-                      className="w-48 h-48 block"
-                    />
+          {/* Right Side: QR Scan Flow / Connected Metrics (Split Grid 7 columns) */}
+          <div className="md:col-span-7 p-6 md:p-8 bg-[#0F121D]/20 flex flex-col items-center justify-center text-center">
+            
+            {/* If connected: Show metrics & disconnect */}
+            {isConnected ? (
+              <div className="w-full space-y-6 animate-in fade-in duration-300">
+                <div className="flex items-center justify-center gap-3">
+                  <Smartphone className="w-12 h-12 text-emerald-400" />
+                  <div className="text-left">
+                    <span className="text-sm font-bold text-neutral-100 block">{pushname || 'Primary Connection'}</span>
+                    <span className="text-xs text-neutral-450 block mt-0.5">+{phoneNumber?.replace(/[^\d]/g, '') || '91XXXXXXXXXX'}</span>
                   </div>
-                  <p className="text-[10px] text-neutral-400 text-center leading-relaxed">
-                    Open WhatsApp &gt; Menu &gt; Linked Devices &gt; Link a Device. Scan this QR Code to authorize.
-                  </p>
+                </div>
+
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                  <div className="p-4 rounded-xl border border-neutral-900 bg-neutral-950/20 text-left space-y-1">
+                    <span className="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Health Score</span>
+                    <span className="text-base font-black text-neutral-250 block">98%</span>
+                  </div>
+                  <div className="p-4 rounded-xl border border-neutral-900 bg-neutral-950/20 text-left space-y-1">
+                    <span className="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Messages Today</span>
+                    <span className="text-base font-black text-neutral-250 block">{logs.length}</span>
+                  </div>
+                  <div className="p-4 rounded-xl border border-neutral-900 bg-neutral-950/20 text-left space-y-1">
+                    <span className="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">API Calls</span>
+                    <span className="text-base font-black text-neutral-250 block">{workspace?.messageUsageThisMonth || 0}</span>
+                  </div>
+                  <div className="p-4 rounded-xl border border-neutral-900 bg-neutral-950/20 text-left space-y-1">
+                    <span className="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">Device Battery</span>
+                    <span className="text-base font-black text-neutral-250 block flex items-center gap-1.5">
+                      <Battery className="w-4 h-4 text-emerald-400" /> 92%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-neutral-900/60 max-w-md mx-auto flex gap-3 justify-center">
+                  <button
+                    onClick={handleVerifyConnection}
+                    disabled={verifying}
+                    className="px-5 py-2.5 rounded-xl border border-neutral-800 bg-neutral-900/30 text-neutral-300 text-xs font-bold uppercase tracking-wider hover:bg-neutral-800 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <CheckCircle className="w-4 h-4 text-emerald-400" /> {verifying ? 'Verifying...' : 'Verify Status'}
+                  </button>
                   <button
                     onClick={handleLogout}
-                    className="text-[11px] text-neutral-500 hover:text-red-400 underline transition-all cursor-pointer"
+                    disabled={actionLoading}
+                    className="px-5 py-2.5 rounded-xl bg-red-950/20 border border-red-800/40 hover:bg-red-900/20 text-red-300 text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer"
                   >
-                    Cancel Link Sequence
+                    <LogOut className="w-4 h-4" /> Disconnect Device
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="p-6 rounded-2xl border border-neutral-900 bg-neutral-900/10 space-y-4 text-center">
-                <h3 className="font-bold text-neutral-200 text-xs uppercase tracking-wider">Session Info</h3>
-                <div className="flex flex-col items-center gap-4 py-8 rounded-xl border border-neutral-900 bg-neutral-950/20 text-neutral-500 text-xs">
-                  < स्मार्टफोनIcon className="w-12 h-12 text-neutral-700" />
-                  <span className="font-medium">No connection configuration active.</span>
+              /* If connecting: QR Display or Trigger generate screen */
+              <div className="w-full flex flex-col items-center justify-center animate-in fade-in duration-300">
+                
+                {/* QR Scanner visual frame */}
+                <div className="relative w-full max-w-[280px] aspect-square flex items-center justify-center mb-6">
+                  <div className={`relative p-4 bg-white border-4 border-neutral-900 rounded-2xl transition-all duration-500 ${isQR ? 'qr-scanner-glow' : ''}`}>
+                    
+                    {isQR ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={qrCode || ''}
+                          alt="WhatsApp Connect QR"
+                          className="w-44 h-44 object-cover rounded animate-pulse"
+                        />
+                        {/* Animated scan line overlay */}
+                        <div className="scan-line" />
+                      </>
+                    ) : isInitializing ? (
+                      <div className="w-44 h-44 bg-neutral-950 rounded flex flex-col items-center justify-center gap-2 text-neutral-450 p-2 text-center">
+                        <RefreshCw className="w-8 h-8 animate-spin text-emerald-400" />
+                        <span className="text-[9px] uppercase font-bold tracking-wider leading-relaxed">
+                          {status === 'Restoring previous session...'
+                            ? `Restoring Session... (${restoreTimeLeft}s)`
+                            : status}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="w-44 h-44 bg-neutral-950 rounded flex flex-col items-center justify-center gap-2 text-neutral-550 p-3">
+                        <Smartphone className="w-10 h-10 text-neutral-700" />
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-center text-neutral-600 leading-snug">No active link scan requested.</span>
+                      </div>
+                    )}
+
+                    {/* Corner accents */}
+                    <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-emerald-500 rounded-tl-lg pointer-events-none"></div>
+                    <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-emerald-500 rounded-tr-lg pointer-events-none"></div>
+                    <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-emerald-500 rounded-bl-lg pointer-events-none"></div>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-emerald-500 rounded-br-lg pointer-events-none"></div>
+                  </div>
                 </div>
+
+                {/* Actions & timer details */}
+                <div className="w-full max-w-[280px] space-y-4">
+                  {isQR && (
+                    <div className="flex items-center justify-center gap-4 py-2 border-b border-neutral-900/60 mb-2">
+                      <div className="flex flex-col items-center">
+                        <span className="font-mono text-sm text-emerald-400 font-bold" id="timer">{formatTime(timeLeft)}</span>
+                        <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider">Valid For</span>
+                      </div>
+                      <div className="w-px h-8 bg-neutral-900" />
+                      <button
+                        onClick={handleConnect}
+                        disabled={actionLoading}
+                        className="flex flex-col items-center group cursor-pointer active:scale-95 transition-all text-neutral-400 hover:text-emerald-400 bg-transparent border-0 outline-none"
+                      >
+                        <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                        <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">Refresh QR</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {isQR ? (
+                    <button className="w-full py-3.5 bg-emerald-500 text-neutral-955 font-bold rounded-xl shadow-md flex items-center justify-center gap-2 uppercase text-[10px] tracking-widest border-0">
+                      <span>Waiting for scan</span>
+                      <div className="flex gap-1">
+                        <span className="w-1 h-1 bg-neutral-955 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
+                        <span className="w-1 h-1 bg-neutral-955 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                        <span className="w-1 h-1 bg-neutral-955 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                      </div>
+                    </button>
+                  ) : isInitializing ? (
+                    <button disabled className="w-full py-3.5 bg-neutral-900 border border-neutral-800 text-neutral-500 font-bold rounded-xl flex items-center justify-center gap-2 uppercase text-[10px] tracking-widest">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-500" />
+                      <span>
+                        {status === 'Restoring previous session...'
+                          ? `Restoring Session (${restoreTimeLeft}s)`
+                          : status}
+                      </span>
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      <button
+                        onClick={handleConnect}
+                        disabled={actionLoading}
+                        className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-955 font-bold rounded-xl shadow-md transition-all uppercase text-[10px] tracking-widest cursor-pointer border-0"
+                      >
+                        Generate QR Connection Code
+                      </button>
+                      
+                      {sessionExists && (
+                        <button
+                          onClick={handleRestoreSession}
+                          disabled={actionLoading}
+                          className="w-full py-3.5 border border-neutral-850 hover:bg-neutral-900 text-neutral-350 font-bold rounded-xl transition-all uppercase text-[10px] tracking-widest cursor-pointer bg-transparent"
+                        >
+                          Use Existing Session
+                        </button>
+                      )}
+
+                      {lastError && (
+                        <div className="p-3 bg-red-950/20 border border-red-900/35 text-red-400 rounded-xl text-[10px] text-left leading-relaxed font-mono">
+                          ❌ {lastError}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <p className="text-[10px] text-neutral-500 leading-relaxed pt-2">
+                    Trouble scanning? <a className="text-emerald-400 hover:underline font-bold" href="#">Link with phone number instead</a>
+                  </p>
+                </div>
+
               </div>
             )}
+
           </div>
+
         </div>
       )}
 
@@ -756,6 +921,66 @@ export default function WhatsAppDashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+
+          {/* Sync Audits Sub-panel */}
+          <div className="lg:col-span-12 glass-card border border-neutral-855 p-6 rounded-2xl space-y-4">
+            <h3 className="font-bold text-neutral-200 flex items-center gap-2">
+              <Database className="w-5 h-5 text-emerald-400" /> WhatsApp Historical Sync Audit Log
+            </h3>
+            <p className="text-xs text-neutral-450">Review sync efficiency, synced messaging metrics, and individual conversation history loads recorded during the last link sync execution.</p>
+            
+            {syncStats ? (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border border-neutral-900 bg-neutral-950/40 text-xs">
+                  <div>
+                    <span className="text-neutral-500 uppercase font-bold tracking-wider block text-[10px] mb-0.5">Last Sync Completed</span>
+                    <span className="font-mono text-neutral-300 font-bold">{new Date(syncStats.lastSyncTime).toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-neutral-500 uppercase font-bold tracking-wider block text-[10px] mb-0.5">Total Synced Threads</span>
+                    <span className="font-bold text-emerald-400 text-sm">{syncStats.syncedChats} contacts</span>
+                  </div>
+                  <div>
+                    <span className="text-neutral-500 uppercase font-bold tracking-wider block text-[10px] mb-0.5">Overall Sync Status</span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 border border-emerald-500/25 text-emerald-400">
+                      {syncStats.status || 'SUCCESS'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border border-neutral-900 rounded-xl overflow-hidden bg-neutral-955/20 max-h-64 overflow-y-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-neutral-950/80 text-neutral-500 uppercase tracking-widest text-[9px] font-bold border-b border-neutral-900">
+                        <th className="p-3">Contact Details</th>
+                        <th className="p-3">Phone Number</th>
+                        <th className="p-3 text-right">Synced Messages</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-900/60">
+                      {syncStats.contactsSynced && syncStats.contactsSynced.map((c: any, index: number) => (
+                        <tr key={index} className="hover:bg-neutral-900/15">
+                          <td className="p-3 font-semibold text-neutral-300">{c.name || 'Unknown Contact'}</td>
+                          <td className="p-3 font-mono text-neutral-450">+{c.phone}</td>
+                          <td className="p-3 text-right font-bold text-emerald-500/90">{c.messagesCount} msgs</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 text-center border border-dashed border-neutral-800 rounded-2xl bg-neutral-950/10 space-y-2">
+                <RefreshCw className={`w-8 h-8 mx-auto text-neutral-600 ${status.startsWith('Syncing') ? 'animate-spin text-amber-500' : ''}`} />
+                <p className="text-xs text-neutral-500 font-bold">
+                  {status.startsWith('Syncing') 
+                    ? `Currently synchronizing device threads: ${status}`
+                    : 'No historical link sync logs exist yet. Connect device to generate audit metadata.'
+                  }
+                </p>
+              </div>
+            )}
           </div>
 
         </div>

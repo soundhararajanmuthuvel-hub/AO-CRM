@@ -32,7 +32,7 @@ export default function Sidebar() {
 
   const isSuperAdmin = user?.role === 'superadmin';
 
-  // Grouped Menu Items for WhatsFlow AI
+  // Grouped Menu Items for Cusman CRM
   const sections = [
     {
       title: 'Overview',
@@ -85,10 +85,10 @@ export default function Sidebar() {
       {/* Brand Header */}
       <div className="p-5 border-b border-neutral-900 flex flex-col gap-1.5 bg-[#070A0F]/30">
         <div className="flex items-center gap-2">
-          <span className="w-6 h-6 rounded-md bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-neutral-950 font-black text-xs">W</span>
-          <span className="text-lg font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">WHATSFLOW AI</span>
+          <span className="w-6 h-6 rounded-md bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-neutral-950 font-black text-xs">C</span>
+          <span className="text-lg font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">CUSMAN CRM</span>
         </div>
-        <span className="text-[9px] text-neutral-500 font-bold tracking-wider uppercase">AI WhatsApp Gateway</span>
+        <span className="text-[8px] text-neutral-500 font-bold tracking-wider uppercase">Turn conversations into customers.</span>
       </div>
 
       {/* Tenant Indicator */}

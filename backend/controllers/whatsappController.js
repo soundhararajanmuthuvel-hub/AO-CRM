@@ -26,7 +26,9 @@ exports.getStatus = async (req, res) => {
       qrCode: session.qrCode,
       sessionExists,
       phoneNumber,
-      pushname
+      pushname,
+      lastError: session.lastError,
+      syncStats: session.syncStats
     });
   } catch (error) {
     console.error('WhatsApp status error:', error);
@@ -72,7 +74,7 @@ exports.connect = async (req, res) => {
     await whatsappService.logoutClient(workspaceId);
     
     await WhatsAppSession.update(
-      { status: 'Initializing', qrCode: null },
+      { status: 'Connecting', qrCode: null },
       { where: { workspaceId } }
     );
     
@@ -95,7 +97,7 @@ exports.restoreSession = async (req, res) => {
     }
 
     await WhatsAppSession.update(
-      { status: 'Initializing', qrCode: null },
+      { status: 'Connecting', qrCode: null },
       { where: { workspaceId } }
     );
 
@@ -182,23 +184,14 @@ exports.sendProductMessage = async (req, res) => {
     }
 
     const priceVal = product.offerPrice ? product.offerPrice : product.price;
-    const specifications = product.specifications || '';
-    let weight = '';
-    const weightMatch = specifications.match(/weight:\s*([^\n,]+)/i);
-    if (weightMatch) {
-      weight = weightMatch[1].trim();
-    }
+    const cleanSku = (product.sku || product.name.toUpperCase().replace(/[^A-Z0-9]/g, '')).toUpperCase();
+    const inStock = (product.stock && product.stock > 0) ? '✅ In stock' : '❌ Out of stock';
 
-    const formattedMessage = `📦 *PRODUCT CARD: ${product.name.toUpperCase()}*\n` +
-      `-------------------------------\n` +
-      `💰 Price: ₹${parseFloat(priceVal).toFixed(2)}\n` +
-      (weight ? `⚖ Weight: ${weight}\n` : '') +
-      `🌟 Benefits: ${product.benefits || '100% Organic, Natural & Healthy'}\n` +
-      `📋 Ingredients: ${product.ingredients || 'Natural organic extracts'}\n` +
-      `📑 Specifications: ${product.specifications || 'N/A'}\n` +
-      `🔗 Website Link: ${product.websiteUrl || product.productUrl || 'N/A'}\n` +
-      (product.catalogueUrl || product.cataloguePdfUrl ? `📄 Catalogue PDF: ${product.catalogueUrl || product.cataloguePdfUrl}\n` : '') +
-      `-------------------------------`;
+    const formattedMessage = `*${product.name}* 🛒\n` +
+      `Price: ₹${parseFloat(priceVal).toFixed(2)}\n` +
+      `${inStock}\n\n` +
+      `Reply *"ORDER ${cleanSku}"* to place this order,\n` +
+      `or tap below to see more products.`;
 
     let imageUrl = product.imageUrl;
     let imageType = 'image/jpeg';
@@ -505,11 +498,15 @@ exports.getChats = async (req, res) => {
   try {
     const workspaceId = req.workspaceId;
     const isArchivedQuery = req.query.archived === 'true';
+    const { Op } = require('sequelize');
 
     const chats = await WhatsAppChat.findAll({
       where: { 
         workspaceId,
-        isArchived: isArchivedQuery
+        isArchived: isArchivedQuery,
+        [Op.and]: [
+          WhatsAppChat.sequelize.literal(`EXISTS (SELECT 1 FROM WhatsAppMessages WHERE WhatsAppMessages.chatId = WhatsAppChat.chatId AND WhatsAppMessages.workspaceId = WhatsAppChat.workspaceId)`)
+        ]
       },
       include: [{ model: User, as: 'Assignee', attributes: ['id', 'name', 'email'] }],
       order: [
@@ -797,6 +794,30 @@ exports.toggleStarMessage = async (req, res) => {
   } catch (error) {
     console.error('toggleStarMessage error:', error);
     return res.status(500).json({ error: 'Server error starring message' });
+  }
+};
+
+exports.flagMessageLog = async (req, res) => {
+  try {
+    const workspaceId = req.workspaceId;
+    const { messageId } = req.params;
+    const { reason } = req.body;
+
+    const { AiAutoReplyLog } = require('../models');
+
+    const log = await AiAutoReplyLog.findOne({ where: { workspaceId, messageId } });
+    if (!log) {
+      return res.status(404).json({ error: 'AI prompt log not found for this message' });
+    }
+
+    log.isFlagged = true;
+    log.flaggedReason = reason || 'Flagged as incorrect auto-reply';
+    await log.save();
+
+    return res.json({ success: true, message: 'Auto-reply flagged successfully', log });
+  } catch (error) {
+    console.error('flagMessageLog error:', error);
+    return res.status(500).json({ error: 'Server error flagging message' });
   }
 };
 

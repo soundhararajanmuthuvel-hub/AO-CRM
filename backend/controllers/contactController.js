@@ -165,10 +165,20 @@ exports.deleteContact = async (req, res) => {
     const workspaceId = req.workspaceId;
     const { id } = req.params;
 
-    const deleted = await Contact.destroy({ where: { id, workspaceId } });
-    if (!deleted) {
+    const contact = await Contact.findOne({ where: { id, workspaceId } });
+    if (!contact) {
       return res.status(404).json({ error: 'Contact not found' });
     }
+
+    const { Task, DailyVisit, MessageQueue, MessageLog } = require('../models');
+
+    // Clean up or nullify related models to prevent SQLite foreign key constraint failures
+    await Task.destroy({ where: { contactId: id, workspaceId } });
+    await DailyVisit.destroy({ where: { contactId: id, workspaceId } });
+    await MessageQueue.update({ contactId: null }, { where: { contactId: id, workspaceId } });
+    await MessageLog.update({ contactId: null }, { where: { contactId: id, workspaceId } });
+
+    await contact.destroy();
 
     return res.json({ message: 'Contact deleted successfully' });
   } catch (error) {
@@ -425,5 +435,96 @@ exports.getContactById = async (req, res) => {
   } catch (error) {
     console.error('getContactById error:', error);
     return res.status(500).json({ error: 'Server error retrieving contact' });
+  }
+};
+
+exports.mergeContacts = async (req, res) => {
+  try {
+    const workspaceId = req.workspaceId;
+    const { sourceContactId, targetContactId } = req.body;
+
+    if (!sourceContactId || !targetContactId) {
+      return res.status(400).json({ error: 'sourceContactId and targetContactId are required.' });
+    }
+
+    const sourceContact = await Contact.findOne({ where: { id: sourceContactId, workspaceId } });
+    const targetContact = await Contact.findOne({ where: { id: targetContactId, workspaceId } });
+
+    if (!sourceContact || !targetContact) {
+      return res.status(404).json({ error: 'One or both contacts were not found.' });
+    }
+
+    // Merge fields
+    if (!targetContact.email && sourceContact.email) targetContact.email = sourceContact.email;
+    if (!targetContact.address && sourceContact.address) targetContact.address = sourceContact.address;
+    if (!targetContact.gstNumber && sourceContact.gstNumber) targetContact.gstNumber = sourceContact.gstNumber;
+    if (!targetContact.city && sourceContact.city) targetContact.city = sourceContact.city;
+    if (!targetContact.company && sourceContact.company) targetContact.company = sourceContact.company;
+    if (!targetContact.birthday && sourceContact.birthday) targetContact.birthday = sourceContact.birthday;
+
+    // Merge tags
+    const targetTags = targetContact.tags ? targetContact.tags.split(',').map(t => t.trim()) : [];
+    const sourceTags = sourceContact.tags ? sourceContact.tags.split(',').map(t => t.trim()) : [];
+    const mergedTags = Array.from(new Set([...targetTags, ...sourceTags])).filter(Boolean).join(', ');
+    targetContact.tags = mergedTags;
+
+    // Merge purchase values
+    targetContact.totalPurchaseValue = parseFloat(targetContact.totalPurchaseValue || 0) + parseFloat(sourceContact.totalPurchaseValue || 0);
+    targetContact.outstandingAmount = parseFloat(targetContact.outstandingAmount || 0) + parseFloat(sourceContact.outstandingAmount || 0);
+
+    if (sourceContact.lastPurchaseDate) {
+      if (!targetContact.lastPurchaseDate || new Date(sourceContact.lastPurchaseDate) > new Date(targetContact.lastPurchaseDate)) {
+        targetContact.lastPurchaseDate = sourceContact.lastPurchaseDate;
+      }
+    }
+
+    await targetContact.save();
+
+    // Re-link associated entities
+    const { SalesOrder, Task, MessageLog } = require('../models');
+
+    await SalesOrder.update(
+      { customerName: targetContact.name, phone: targetContact.phone, city: targetContact.city || 'Unknown' },
+      { where: { workspaceId, phone: sourceContact.phone } }
+    );
+
+    await Task.update(
+      { contactId: targetContact.id },
+      { where: { workspaceId, contactId: sourceContact.id } }
+    );
+
+    await MessageLog.update(
+      { contactId: targetContact.id, phone: targetContact.phone },
+      { where: { workspaceId, contactId: sourceContact.id } }
+    );
+
+    // Delete source contact
+    await sourceContact.destroy();
+
+    // Audit logging for contact merge
+    try {
+      const { AuditLog } = require('../models');
+      await AuditLog.create({
+        workspaceId,
+        userId: req.userId || null,
+        userEmail: req.userEmail || req.userName || 'Unknown User',
+        action: 'CONTACT_MERGE',
+        details: {
+          sourceContactId,
+          sourceName: sourceContact.name,
+          sourcePhone: sourceContact.phone,
+          targetContactId,
+          targetName: targetContact.name,
+          targetPhone: targetContact.phone
+        }
+      });
+    } catch (auditErr) {
+      console.error('Failed to write merge audit log:', auditErr);
+    }
+
+    return res.json({ success: true, message: 'Contacts merged successfully.', mergedContact: targetContact });
+  } catch (error) {
+    console.error('Merge contacts error:', error);
+    return res.status(500).json({ error: 'Server error merging contacts' });
   }
 };

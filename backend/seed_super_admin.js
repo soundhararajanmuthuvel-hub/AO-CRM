@@ -1,3 +1,8 @@
+if (process.env.FORCE_SEED !== 'true') {
+  console.error('ERROR: To run this seed script, you must set the FORCE_SEED=true environment variable.');
+  process.exit(1);
+}
+
 const bcrypt = require('bcryptjs');
 const { 
   sequelize, 

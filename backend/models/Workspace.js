@@ -91,6 +91,36 @@ const Workspace = sequelize.define('Workspace', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  broadcastDailyCap: {
+    type: DataTypes.INTEGER,
+    defaultValue: 500,
+    field: 'broadcast_daily_cap'
+  },
+  broadcastMinDelay: {
+    type: DataTypes.INTEGER,
+    defaultValue: 3,
+    field: 'broadcast_min_delay'
+  },
+  broadcastMaxDelay: {
+    type: DataTypes.INTEGER,
+    defaultValue: 8,
+    field: 'broadcast_max_delay'
+  },
+  aiAutoReplyEnabled: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    field: 'ai_auto_reply_enabled'
+  },
+  aiConfidenceThreshold: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0.7,
+    field: 'ai_confidence_threshold'
+  },
+  aiSystemPrompt: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'ai_system_prompt'
+  }
 }, {
   timestamps: true,
 });

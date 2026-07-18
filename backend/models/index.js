@@ -15,6 +15,7 @@ const SalesOrder = require('./SalesOrder');
 const AutoReplyRule = require('./AutoReplyRule');
 const AuditLog = require('./AuditLog');
 const SupportTicket = require('./SupportTicket');
+const AiAutoReplyLog = require('./AiAutoReplyLog');
 const SystemSetting = require('./SystemSetting');
 const BillingRecord = require('./BillingRecord');
 const Product = require('./Product');
@@ -150,6 +151,13 @@ ChatNote.belongsTo(User, { foreignKey: 'userId' });
 User.hasMany(WhatsAppChat, { foreignKey: 'assignedTo', as: 'AssignedChats', onDelete: 'SET NULL' });
 WhatsAppChat.belongsTo(User, { foreignKey: 'assignedTo', as: 'Assignee' });
 
+// Contact Messaging History associations
+Contact.hasMany(WhatsAppMessage, { foreignKey: 'contactId', as: 'WhatsAppMessages', onDelete: 'SET NULL' });
+WhatsAppMessage.belongsTo(Contact, { foreignKey: 'contactId', as: 'Contact' });
+
+Contact.hasMany(WhatsAppChat, { foreignKey: 'contactId', as: 'WhatsAppChats', onDelete: 'SET NULL' });
+WhatsAppChat.belongsTo(Contact, { foreignKey: 'contactId', as: 'Contact' });
+
 // Super Admin & Tenancy Associations
 Workspace.hasMany(BillingRecord, { foreignKey: 'workspaceId', onDelete: 'CASCADE' });
 BillingRecord.belongsTo(Workspace, { foreignKey: 'workspaceId' });
@@ -159,6 +167,9 @@ SupportTicket.belongsTo(Workspace, { foreignKey: 'workspaceId' });
 
 Workspace.hasMany(AuditLog, { foreignKey: 'workspaceId', onDelete: 'CASCADE' });
 AuditLog.belongsTo(Workspace, { foreignKey: 'workspaceId' });
+
+Workspace.hasMany(AiAutoReplyLog, { foreignKey: 'workspaceId', onDelete: 'CASCADE' });
+AiAutoReplyLog.belongsTo(Workspace, { foreignKey: 'workspaceId' });
 
 User.hasMany(SupportTicket, { foreignKey: 'userId', onDelete: 'CASCADE' });
 SupportTicket.belongsTo(User, { foreignKey: 'userId' });
@@ -183,6 +194,7 @@ module.exports = {
   SalesOrder,
   AutoReplyRule,
   AuditLog,
+  AiAutoReplyLog,
   SupportTicket,
   SystemSetting,
   BillingRecord,

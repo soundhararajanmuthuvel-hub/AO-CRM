@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AO-CRM Mobile Dashboard</title>
+<!-- Google Fonts: Inter & JetBrains Mono -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#dce9ff",
+                    "on-surface-variant": "#40484f",
+                    "inverse-on-surface": "#eaf1ff",
+                    "secondary-fixed-dim": "#3de273",
+                    "surface-dim": "#cbdbf5",
+                    "surface-container-low": "#eff4ff",
+                    "outline-variant": "#bfc7d0",
+                    "on-tertiary-fixed": "#161c27",
+                    "inverse-surface": "#213145",
+                    "on-secondary-fixed-variant": "#005322",
+                    "surface-tint": "#006491",
+                    "error": "#ba1a1a",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed-variant": "#004c6e",
+                    "on-tertiary-fixed-variant": "#414754",
+                    "background": "#f8f9ff",
+                    "tertiary-container": "#696f7e",
+                    "surface-container": "#e5eeff",
+                    "on-secondary-fixed": "#002109",
+                    "surface-container-highest": "#d3e4fe",
+                    "primary-fixed": "#c9e6ff",
+                    "primary": "#005c86",
+                    "primary-container": "#0e76a8",
+                    "inverse-primary": "#8aceff",
+                    "surface": "#f8f9ff",
+                    "surface-variant": "#d3e4fe",
+                    "surface-bright": "#f8f9ff",
+                    "on-secondary-container": "#007232",
+                    "on-tertiary-container": "#f0f3ff",
+                    "on-error": "#ffffff",
+                    "primary-fixed-dim": "#8aceff",
+                    "outline": "#707880",
+                    "on-surface": "#0b1c30",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed": "#001e2f",
+                    "tertiary-fixed": "#dde2f3",
+                    "secondary": "#006d2f",
+                    "on-primary-container": "#ebf5ff",
+                    "on-tertiary": "#ffffff",
+                    "tertiary": "#515765",
+                    "tertiary-fixed-dim": "#c1c6d7",
+                    "on-error-container": "#93000a",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed": "#66ff8e",
+                    "secondary-container": "#5dfd8a",
+                    "on-background": "#0b1c30"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1440px",
+                    "gutter": "16px",
+                    "xl": "32px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "base": "4px",
+                    "sm": "8px",
+                    "xs": "4px",
+                    "sidebar-width": "260px"
+            },
+            "fontFamily": {
+                    "label-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "display-lg-mobile": ["Inter"],
+                    "body-md": ["Inter"],
+                    "mono-sm": ["JetBrains Mono"],
+                    "body-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-sm": ["18px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "display-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "mono-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .pipeline-clip {
+            clip-path: polygon(0% 0%, 100% 0%, 85% 100%, 15% 100%);
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md text-body-md select-none overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 z-50 w-full h-16 bg-surface flex justify-between items-center px-lg border-b border-outline-variant">
+<div class="flex items-center gap-sm cursor-pointer active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-primary">menu</span>
+<span class="font-headline-md text-headline-md font-bold text-primary tracking-tight">AO-CRM</span>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors active:scale-90">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors relative active:scale-90">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full ring-2 ring-surface"></span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-20 pb-24 px-md space-y-lg max-w-md mx-auto">
+<!-- Summary Grid (2x2) -->
+<section class="grid grid-cols-2 gap-md">
+<!-- Total Leads -->
+<div class="bg-surface-container-lowest p-md rounded-lg border border-outline-variant shadow-sm flex flex-col gap-xs transition-transform active:scale-95">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Total Leads</span>
+<span class="material-symbols-outlined text-primary text-[20px]">group</span>
+</div>
+<div class="font-headline-md text-headline-md text-on-surface">1,240</div>
+<div class="flex items-center gap-xs text-secondary font-label-md text-[10px]">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>12% from last month</span>
+</div>
+</div>
+<!-- Open Deals -->
+<div class="bg-surface-container-lowest p-md rounded-lg border border-outline-variant shadow-sm flex flex-col gap-xs transition-transform active:scale-95">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Open Deals</span>
+<span class="material-symbols-outlined text-primary text-[20px]">payments</span>
+</div>
+<div class="font-headline-md text-headline-md text-on-surface">$42.5k</div>
+<div class="flex items-center gap-xs text-secondary font-label-md text-[10px]">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+<span>High value ops</span>
+</div>
+</div>
+<!-- Revenue -->
+<div class="bg-surface-container-lowest p-md rounded-lg border border-outline-variant shadow-sm flex flex-col gap-xs transition-transform active:scale-95">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Revenue</span>
+<span class="material-symbols-outlined text-primary text-[20px]">account_balance_wallet</span>
+</div>
+<div class="font-headline-md text-headline-md text-on-surface">$12.8k</div>
+<div class="flex items-center gap-xs text-primary font-label-md text-[10px]">
+<span class="material-symbols-outlined text-[14px]">calendar_today</span>
+<span>This quarter</span>
+</div>
+</div>
+<!-- WhatsApp Messages -->
+<div class="bg-surface-container-lowest p-md rounded-lg border border-outline-variant shadow-sm flex flex-col gap-xs transition-transform active:scale-95">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">WhatsApp</span>
+<span class="material-symbols-outlined text-[#25D366] text-[20px]" style="font-variation-settings: 'FILL' 1;">chat</span>
+</div>
+<div class="font-headline-md text-headline-md text-on-surface">45</div>
+<div class="flex items-center gap-xs text-error font-label-md text-[10px]">
+<span class="material-symbols-outlined text-[14px]">mark_chat_unread</span>
+<span>8 urgent replies</span>
+</div>
+</div>
+</section>
+<!-- Pipeline Funnel -->
+<section class="bg-surface-container-lowest p-lg rounded-lg border border-outline-variant shadow-sm">
+<div class="flex items-center justify-between mb-lg">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Pipeline Funnel</h2>
+<button class="text-primary font-label-md text-label-md flex items-center">
+                    Full Report <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+<div class="space-y-sm flex flex-col items-center">
+<!-- Funnel Stage: Leads -->
+<div class="w-full bg-primary/10 rounded-lg p-sm relative flex items-center justify-between" style="width: 100%;">
+<div class="flex items-center gap-sm">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-body-md text-on-surface">Leads</span>
+</div>
+<span class="font-mono-sm text-on-surface-variant">420</span>
+</div>
+<!-- Funnel Stage: Qualified -->
+<div class="w-full bg-primary/20 rounded-lg p-sm relative flex items-center justify-between" style="width: 85%;">
+<div class="flex items-center gap-sm">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-body-md text-on-surface">Qualified</span>
+</div>
+<span class="font-mono-sm text-on-surface-variant">185</span>
+</div>
+<!-- Funnel Stage: Proposal -->
+<div class="w-full bg-primary/30 rounded-lg p-sm relative flex items-center justify-between" style="width: 65%;">
+<div class="flex items-center gap-sm">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-body-md text-on-surface">Proposal</span>
+</div>
+<span class="font-mono-sm text-on-surface-variant">92</span>
+</div>
+<!-- Funnel Stage: Negotiating -->
+<div class="w-full bg-primary/40 rounded-lg p-sm relative flex items-center justify-between" style="width: 45%;">
+<div class="flex items-center gap-sm">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-body-md text-on-surface">Negotiating</span>
+</div>
+<span class="font-mono-sm text-on-surface-variant">24</span>
+</div>
+<!-- Funnel Stage: Won -->
+<div class="w-full bg-secondary-container rounded-lg p-sm relative flex items-center justify-between" style="width: 25%;">
+<div class="flex items-center gap-sm">
+<span class="w-2 h-2 rounded-full bg-on-secondary-container"></span>
+<span class="font-body-md text-on-secondary-container font-bold">Won</span>
+</div>
+<span class="font-mono-sm text-on-secondary-container">12</span>
+</div>
+</div>
+</section>
+<!-- Recent Activity -->
+<section class="bg-surface-container-lowest p-lg rounded-lg border border-outline-variant shadow-sm">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-md">Recent Activity</h2>
+<div class="space-y-md">
+<div class="flex gap-md">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[20px]">person_add</span>
+</div>
+<div class="flex flex-col">
+<p class="font-body-md text-on-surface">New lead added: <span class="font-bold text-primary">Sarah J.</span></p>
+<p class="font-body-sm text-on-surface-variant">2 minutes ago • Real Estate Inbound</p>
+</div>
+</div>
+<div class="flex gap-md">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary text-[20px]">move_up</span>
+</div>
+<div class="flex flex-col">
+<p class="font-body-md text-on-surface">Deal moved to <span class="font-bold">Proposal</span>: Project X</p>
+<p class="font-body-sm text-on-surface-variant">45 minutes ago • $12,500 value</p>
+</div>
+</div>
+<div class="flex gap-md">
+<div class="w-10 h-10 rounded-full bg-[#25D366]/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[#25D366] text-[20px]">chat</span>
+</div>
+<div class="flex flex-col">
+<p class="font-body-md text-on-surface">WhatsApp from <span class="font-bold">Mike Ross</span></p>
+<p class="font-body-sm text-on-surface-variant">1 hour ago • "When can we start?"</p>
+</div>
+</div>
+<div class="flex gap-md">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">task_alt</span>
+</div>
+<div class="flex flex-col">
+<p class="font-body-md text-on-surface">Task completed: Follow up with HR</p>
+<p class="font-body-sm text-on-surface-variant">2 hours ago • Marketing Dept</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Upcoming Tasks Widget -->
+<section class="bg-surface-container-lowest p-lg rounded-lg border border-outline-variant shadow-sm">
+<div class="flex items-center justify-between mb-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Upcoming Tasks</h2>
+<span class="bg-primary-container text-on-primary-container text-[10px] font-bold px-2 py-0.5 rounded-full">4 TODAY</span>
+</div>
+<div class="space-y-sm">
+<label class="flex items-center gap-md p-md border border-transparent rounded-lg hover:bg-surface-container-low transition-colors group cursor-pointer">
+<input class="w-5 h-5 rounded border-outline text-primary focus:ring-primary focus:ring-offset-0 transition-all" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-body-md text-on-surface group-hover:text-primary transition-colors">Call Sarah J. for requirements</span>
+<span class="font-label-md text-error flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">alarm</span> 10:30 AM
+                        </span>
+</div>
+</label>
+<label class="flex items-center gap-md p-md border border-transparent rounded-lg hover:bg-surface-container-low transition-colors group cursor-pointer">
+<input class="w-5 h-5 rounded border-outline text-primary focus:ring-primary focus:ring-offset-0 transition-all" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-body-md text-on-surface group-hover:text-primary transition-colors">Review Project X Contract</span>
+<span class="font-label-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">alarm</span> 02:00 PM
+                        </span>
+</div>
+</label>
+<label class="flex items-center gap-md p-md border border-transparent rounded-lg hover:bg-surface-container-low transition-colors group cursor-pointer">
+<input class="w-5 h-5 rounded border-outline text-primary focus:ring-primary focus:ring-offset-0 transition-all" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-body-md text-on-surface group-hover:text-primary transition-colors">Team Sync - Weekly Review</span>
+<span class="font-label-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">alarm</span> 04:30 PM
+                        </span>
+</div>
+</label>
+</div>
+<button class="w-full mt-md py-sm border border-dashed border-outline-variant rounded-lg text-on-surface-variant font-label-md text-label-md flex items-center justify-center gap-sm hover:border-primary hover:text-primary transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+                Add New Task
+            </button>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full h-16 bg-surface border-t border-outline-variant z-50 flex justify-around items-center px-4 pb-safe shadow-lg">
+<!-- Dashboard (Active) -->
+<div class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 active:scale-90 transition-transform cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-md text-[10px]">Dashboard</span>
+</div>
+<!-- Leads -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:scale-90 transition-transform cursor-pointer">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md text-[10px]">Leads</span>
+</div>
+<!-- WhatsApp -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:scale-90 transition-transform cursor-pointer">
+<span class="material-symbols-outlined">chat</span>
+<span class="font-label-md text-[10px]">WhatsApp</span>
+</div>
+<!-- Pipeline -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:scale-90 transition-transform cursor-pointer">
+<span class="material-symbols-outlined">view_column</span>
+<span class="font-label-md text-[10px]">Pipeline</span>
+</div>
+<!-- Tasks -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant active:scale-90 transition-transform cursor-pointer">
+<span class="material-symbols-outlined">check_circle</span>
+<span class="font-label-md text-[10px]">Tasks</span>
+</div>
+</nav>
+<!-- FAB (Contextual for Home/Dashboard) -->
+<button class="fixed right-6 bottom-24 w-14 h-14 bg-primary text-on-primary rounded-xl shadow-xl flex items-center justify-center active:scale-90 transition-transform z-40">
+<span class="material-symbols-outlined text-[28px]">add</span>
+</button>
+<script>
+        // Simple micro-interactions for the task list
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const text = this.nextElementSibling.querySelector('span:first-child');
+                if (this.checked) {
+                    text.classList.add('line-through', 'opacity-50');
+                } else {
+                    text.classList.remove('line-through', 'opacity-50');
+                }
+            });
+        });
+
+        // Pull to refresh simulation logic could be added here
+    </script>
+</body></html>

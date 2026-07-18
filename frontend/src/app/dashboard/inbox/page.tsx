@@ -19,6 +19,7 @@ import {
   PlusCircle,
   MessageSquare,
   AlertCircle,
+  AlertTriangle,
   Clock,
   Briefcase,
   Smile,
@@ -33,6 +34,14 @@ import {
   FileUp,
   X
 } from 'lucide-react';
+
+const QUICK_REPLIES = [
+  { label: '👋 Greeting', text: 'Hello! Thank you for contacting Amudhasurabiy Organics. How can we help you today?' },
+  { label: '📦 Product Inquiry', text: 'We offer a wide range of 100% natural, organic products. Which specific item are you interested in?' },
+  { label: '💳 Payment Options', text: 'You can pay securely via UPI, NetBanking, or Cash on Delivery (COD). Let us know your preferred method!' },
+  { label: '🚚 Delivery Time', text: 'Orders are typically processed within 24 hours and delivered within 3-5 business days.' },
+  { label: '🙏 Thank You', text: 'Thank you for your order! We appreciate your support for organic farming.' }
+];
 
 interface Chat {
   id: string;
@@ -88,6 +97,7 @@ interface Message {
   suggestedReply: string | null;
   isStarred: boolean;
   detectedProduct?: DetectedProduct;
+  status?: 'sent' | 'delivered' | 'read' | 'failed' | 'pending';
 }
 
 interface Note {
@@ -128,9 +138,11 @@ export default function TeamInboxPage() {
   // Real WhatsApp Inbox syncing state
   const [selectedChatType, setSelectedChatType] = useState<'personal' | 'groups'>('personal');
   const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('Disconnected');
 
   // Filters & Search
   const [searchTerm, setSearchTerm] = useState('');
+  const [messageSearchTerm, setMessageSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<'All' | 'Unread' | 'Leads' | 'Orders' | 'Follow-up' | 'Support' | 'Archived'>('All');
 
   const handleSyncChats = async () => {
@@ -225,14 +237,23 @@ export default function TeamInboxPage() {
   const fetchData = async () => {
     try {
       const showArchived = activeFilter === 'Archived';
-      const [chatsRes, teamRes, prodRes] = await Promise.all([
+      const [chatsRes, teamRes, prodRes, statusRes] = await Promise.all([
         api.get(`/whatsapp/chats?archived=${showArchived}`),
         api.get('/auth/users'),
-        api.get('/products')
+        api.get('/products'),
+        api.get('/whatsapp/status').catch(() => null)
       ]);
       setChats(chatsRes.data);
       setTeamMembers(teamRes.data || []);
       setProducts(prodRes.data || []);
+      if (statusRes && statusRes.data) {
+        setSyncStatus(statusRes.data.status);
+        if (statusRes.data.status.startsWith('Syncing')) {
+          setSyncing(true);
+        } else if (statusRes.data.status === 'Live' || statusRes.data.status === 'Synced') {
+          setSyncing(false);
+        }
+      }
     } catch (err) {
       console.error('Failed to load initial inbox data:', err);
     }
@@ -248,6 +269,16 @@ export default function TeamInboxPage() {
         : 'http://localhost:5000');
     const socket: Socket = io(socketUrl, {
       query: { workspaceId: user.workspaceId }
+    });
+
+    socket.on('status_change', (data: { status: string }) => {
+      setSyncStatus(data.status);
+      if (data.status.startsWith('Syncing')) {
+        setSyncing(true);
+      } else if (data.status === 'Live' || data.status === 'Synced') {
+        setSyncing(false);
+        fetchData();
+      }
     });
 
     socket.on('new_chat_message', (data: { chat: Chat; message: Message }) => {
@@ -444,6 +475,18 @@ export default function TeamInboxPage() {
       );
     } catch (err) {
       setAlertError('Failed to star message.');
+    }
+  };
+
+  // Flag AI Auto-Reply
+  const handleFlagMessage = async (messageId: string) => {
+    const reason = prompt("Why was this AI auto-reply wrong? (e.g. incorrect price, inappropriate tone):", "Incorrect price details");
+    if (reason === null) return;
+    try {
+      await api.post(`/whatsapp/messages/${messageId}/flag`, { reason });
+      setAlertSuccess("Auto-reply successfully flagged for prompt tuning.");
+    } catch (err: any) {
+      setAlertError(err.response?.data?.error || "This message cannot be flagged or was not sent by the AI.");
     }
   };
 
@@ -765,8 +808,17 @@ export default function TeamInboxPage() {
         {/* Search Header */}
         <div className="p-4 border-b border-neutral-800/80 bg-neutral-900/10">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
-              Conversations ({chats.length} synced)
+            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest flex items-center gap-2">
+              Conversations
+              <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${
+                syncStatus === 'Live' || syncStatus === 'Synced'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : syncStatus.startsWith('Syncing') || syncStatus.startsWith('Restoring') || syncStatus === 'Connecting' || syncStatus === 'Authenticating' || syncStatus === 'Session expired, generating new QR'
+                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 animate-pulse'
+                  : 'bg-red-500/10 text-red-400 border-red-500/20'
+              }`}>
+                {syncStatus}
+              </span>
             </h3>
             <button
               onClick={handleSyncChats}
@@ -970,6 +1022,25 @@ export default function TeamInboxPage() {
 
               {/* Status and Assignee Selectors */}
               <div className="flex items-center gap-3">
+                {/* Local Message Search */}
+                <div className="relative flex items-center">
+                  <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search messages..."
+                    value={messageSearchTerm}
+                    onChange={(e) => setMessageSearchTerm(e.target.value)}
+                    className="text-[10px] pl-7 pr-7 py-1 rounded-lg bg-neutral-955 border border-neutral-850 text-neutral-300 font-bold focus:outline-none w-28 focus:w-40 transition-all duration-300"
+                  />
+                  {messageSearchTerm && (
+                    <button
+                      onClick={() => setMessageSearchTerm('')}
+                      className="absolute right-2 text-neutral-500 hover:text-neutral-300 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
                 <Tag className="w-3.5 h-3.5 text-neutral-500" />
                 <select
                   value={selectedChat.salesStatus}
@@ -1053,7 +1124,7 @@ export default function TeamInboxPage() {
                 </div>
               ) : (
                 /* WhatsApp Messages Thread */
-                messages.map((msg) => {
+                messages.filter(msg => !msg.body || msg.body.toLowerCase().includes(messageSearchTerm.toLowerCase())).map((msg) => {
                   const hasAI = !msg.fromMe && (msg.leadIntent !== 'None' || msg.orderIntent !== 'None' || msg.sentiment !== 'None' || msg.suggestedReply || msg.detectedProduct);
                   
                   return (
@@ -1074,8 +1145,32 @@ export default function TeamInboxPage() {
                             >
                               <Star className={`w-3.5 h-3.5 ${msg.isStarred ? 'fill-amber-500 text-amber-500' : ''}`} />
                             </button>
-                            <span className={`block text-[9px] ${msg.fromMe ? 'text-primary-foreground/60 font-semibold' : 'text-neutral-500'}`}>
+                            {msg.fromMe && (
+                              <button
+                                onClick={() => handleFlagMessage(msg.messageId)}
+                                className="opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-rose-450 transition-all shrink-0 cursor-pointer"
+                                title="Flag AI Response as Incorrect"
+                              >
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <span className={`block text-[9px] ${msg.fromMe ? 'text-neutral-400 font-semibold flex items-center gap-1.5' : 'text-neutral-500'}`}>
                               {new Date(msg.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                              {msg.fromMe && (
+                                <span className="inline-block scale-90 shrink-0" title={`Status: ${msg.status || 'sent'}`}>
+                                  {msg.status === 'read' ? (
+                                    <span className="text-blue-400 font-black">✓✓</span>
+                                  ) : msg.status === 'delivered' ? (
+                                    <span className="text-neutral-400 font-bold">✓✓</span>
+                                  ) : msg.status === 'failed' ? (
+                                    <span className="text-red-500 font-extrabold">!</span>
+                                  ) : msg.status === 'pending' ? (
+                                    <Clock className="w-2.5 h-2.5 text-neutral-500 animate-pulse" />
+                                  ) : (
+                                    <span className="text-neutral-500">✓</span>
+                                  )}
+                                </span>
+                              )}
                             </span>
                           </div>
                         </div>
@@ -1282,6 +1377,21 @@ export default function TeamInboxPage() {
             {/* Input message footer */}
             {!showNotesTab && (
               <div className="p-4 border-t border-neutral-800 shrink-0 bg-neutral-955/20 flex flex-col gap-2">
+                {/* Quick Replies chips bar */}
+                <div className="flex gap-1.5 overflow-x-auto pb-1.5 mb-1 shrink-0 scrollbar-thin">
+                  <span className="text-[9px] text-neutral-500 font-bold uppercase pt-1.5 shrink-0 select-none">Quick Replies:</span>
+                  {QUICK_REPLIES.map((reply) => (
+                    <button
+                      key={reply.label}
+                      type="button"
+                      onClick={() => setReplyText(reply.text)}
+                      className="px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-850 text-[10px] text-neutral-400 hover:text-emerald-400 hover:border-emerald-500/20 transition-all font-semibold whitespace-nowrap cursor-pointer"
+                    >
+                      {reply.label}
+                    </button>
+                  ))}
+                </div>
+
                 <form onSubmit={handleSendMessage} className="flex gap-2 items-center">
                   <label className="p-3 rounded-xl border border-neutral-850 bg-neutral-950 hover:bg-neutral-900 text-neutral-400 hover:text-neutral-250 transition-all flex items-center justify-center shrink-0 cursor-pointer" title="Attach image or PDF">
                     <FileUp className="w-4.5 h-4.5" />

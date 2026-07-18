@@ -76,6 +76,15 @@ export default function SettingsPage() {
   const [wlColorSecondary, setWlColorSecondary] = useState('#128C7E');
   const [savingWL, setSavingWL] = useState(false);
 
+  // Broadcast & AI Settings states
+  const [broadcastDailyCap, setBroadcastDailyCap] = useState(500);
+  const [broadcastMinDelay, setBroadcastMinDelay] = useState(3);
+  const [broadcastMaxDelay, setBroadcastMaxDelay] = useState(8);
+  const [aiAutoReplyEnabled, setAiAutoReplyEnabled] = useState(true);
+  const [aiConfidenceThreshold, setAiConfidenceThreshold] = useState(0.7);
+  const [aiSystemPrompt, setAiSystemPrompt] = useState('');
+  const [savingSettings, setSavingSettings] = useState(false);
+
   // Integrations states
   const [activeTab, setActiveTab] = useState<'general' | 'integrations'>('general');
   const [connections, setConnections] = useState<any[]>([]);
@@ -146,6 +155,12 @@ export default function SettingsPage() {
         setWlColorPrimary(workspace.brandColorPrimary || '#25D366');
         setWlColorSecondary(workspace.brandColorSecondary || '#128C7E');
         setWebhookUrl(workspace.webhookUrl || '');
+        setBroadcastDailyCap(workspace.broadcastDailyCap ?? 500);
+        setBroadcastMinDelay(workspace.broadcastMinDelay ?? 3);
+        setBroadcastMaxDelay(workspace.broadcastMaxDelay ?? 8);
+        setAiAutoReplyEnabled(workspace.aiAutoReplyEnabled ?? true);
+        setAiConfidenceThreshold(workspace.aiConfidenceThreshold ?? 0.7);
+        setAiSystemPrompt(workspace.aiSystemPrompt || '');
         if (!workspace.apiKey || !workspace.apiSecret) {
           api.post('/auth/workspace/rotate-api-keys').then(res => {
             setApiKey(res.data.apiKey);
@@ -213,6 +228,29 @@ export default function SettingsPage() {
       setError(err.response?.data?.error || 'Failed to update Webhook URL.');
     } finally {
       setSavingWebhook(false);
+    }
+  };
+
+  const handleSaveCampaignAiSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    setError('');
+    setSuccess('');
+    try {
+      await api.put('/auth/workspace', {
+        broadcastDailyCap: Number(broadcastDailyCap),
+        broadcastMinDelay: Number(broadcastMinDelay),
+        broadcastMaxDelay: Number(broadcastMaxDelay),
+        aiAutoReplyEnabled,
+        aiConfidenceThreshold: Number(aiConfidenceThreshold),
+        aiSystemPrompt
+      });
+      setSuccess('Broadcast & AI configurations saved successfully.');
+      await refreshProfile();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to update campaign/AI configurations.');
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -932,6 +970,119 @@ export default function SettingsPage() {
                     className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/95 text-xs flex items-center gap-1.5 transition-all shadow-lg shadow-primary/10 hover:shadow-primary/20 active:scale-[0.98] cursor-pointer"
                   >
                     <Save className="w-3.5 h-3.5" /> {savingWL ? 'Saving...' : 'Save Custom Branding'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Broadcast & AI Auto-Reply Settings Card */}
+            <div className="p-6 rounded-2xl border border-neutral-850/80 bg-neutral-900/20 backdrop-blur-md shadow-xl shadow-black/10 space-y-6 animate-in fade-in duration-300">
+              <h3 className="font-bold text-neutral-200 text-base flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" /> Campaigns & AI Auto-Replies
+              </h3>
+              <p className="text-xs text-neutral-450">Manage re-engagement broadcasts throttling filters and Claude AI automation settings.</p>
+
+              <form onSubmit={handleSaveCampaignAiSettings} className="space-y-5 pt-2">
+                {/* Broadcast settings */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-primary uppercase tracking-widest">Broadcast Settings</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-450 mb-1.5">Daily Message Cap</label>
+                      <input
+                        type="number"
+                        min="1"
+                        required
+                        value={broadcastDailyCap}
+                        onChange={(e) => setBroadcastDailyCap(Number(e.target.value))}
+                        className="w-full px-4 py-2.5 rounded-xl text-xs bg-neutral-950 border border-neutral-855 focus:outline-none focus:border-primary text-neutral-250 font-bold transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-450 mb-1.5">Min Delay (Seconds)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        required
+                        value={broadcastMinDelay}
+                        onChange={(e) => setBroadcastMinDelay(Number(e.target.value))}
+                        className="w-full px-4 py-2.5 rounded-xl text-xs bg-neutral-950 border border-neutral-855 focus:outline-none focus:border-primary text-neutral-250 font-bold transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-450 mb-1.5">Max Delay (Seconds)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        required
+                        value={broadcastMaxDelay}
+                        onChange={(e) => setBroadcastMaxDelay(Number(e.target.value))}
+                        className="w-full px-4 py-2.5 rounded-xl text-xs bg-neutral-950 border border-neutral-855 focus:outline-none focus:border-primary text-neutral-250 font-bold transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI settings */}
+                <div className="space-y-4 pt-2 border-t border-neutral-850/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-[10px] font-black text-primary uppercase tracking-widest">AI Auto-Reply Settings</h4>
+                      <p className="text-[9px] text-neutral-500 mt-0.5">Toggle LLM automation engine status (Kill Switch).</p>
+                    </div>
+                    {/* Toggle Switch */}
+                    <button
+                      type="button"
+                      onClick={() => setAiAutoReplyEnabled(!aiAutoReplyEnabled)}
+                      className={`w-11 h-6 flex items-center rounded-full p-1 transition-all duration-300 cursor-pointer ${
+                        aiAutoReplyEnabled ? 'bg-primary' : 'bg-neutral-800'
+                      }`}
+                    >
+                      <div
+                        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-all duration-300 ${
+                          aiAutoReplyEnabled ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between items-center mb-1.5">
+                        <label className="block text-xs font-semibold text-neutral-450">Confidence Threshold</label>
+                        <span className="text-xs font-bold text-primary font-mono">{aiConfidenceThreshold}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.1"
+                        max="1.0"
+                        step="0.05"
+                        value={aiConfidenceThreshold}
+                        onChange={(e) => setAiConfidenceThreshold(Number(e.target.value))}
+                        className="w-full accent-primary bg-neutral-950 rounded-lg cursor-pointer h-1.5"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-450 mb-1.5">AI System Prompt Instructions</label>
+                      <textarea
+                        rows={5}
+                        placeholder="Define tone guidelines, brand specifications, return policies, and special greeting directives..."
+                        value={aiSystemPrompt}
+                        onChange={(e) => setAiSystemPrompt(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl text-xs bg-neutral-950 border border-neutral-855 focus:outline-none focus:border-primary text-neutral-300 focus:ring-1 focus:ring-primary/10 transition-all font-sans leading-relaxed"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={savingSettings}
+                    className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/95 text-xs flex items-center gap-1.5 transition-all shadow-lg shadow-primary/10 hover:shadow-primary/20 active:scale-[0.98] cursor-pointer"
+                  >
+                    <Save className="w-3.5 h-3.5" /> {savingSettings ? 'Saving...' : 'Save Broadcast & AI Settings'}
                   </button>
                 </div>
               </form>

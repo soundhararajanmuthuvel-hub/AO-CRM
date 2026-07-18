@@ -226,7 +226,12 @@ exports.getWorkspaceUsers = async (req, res) => {
 exports.updateWorkspace = async (req, res) => {
   try {
     const workspaceId = req.workspaceId;
-    const { name, logoUrl, faviconUrl, customDomain, brandColorPrimary, brandColorSecondary, webhookUrl } = req.body;
+    const { 
+      name, logoUrl, faviconUrl, customDomain, 
+      brandColorPrimary, brandColorSecondary, webhookUrl,
+      broadcastDailyCap, broadcastMinDelay, broadcastMaxDelay,
+      aiAutoReplyEnabled, aiConfidenceThreshold, aiSystemPrompt
+    } = req.body;
 
     const workspace = await Workspace.findByPk(workspaceId);
     if (!workspace) {
@@ -244,6 +249,14 @@ exports.updateWorkspace = async (req, res) => {
     if (brandColorPrimary !== undefined) workspace.brandColorPrimary = brandColorPrimary;
     if (brandColorSecondary !== undefined) workspace.brandColorSecondary = brandColorSecondary;
     if (webhookUrl !== undefined) workspace.webhookUrl = webhookUrl;
+    
+    // Broadcast & AI Settings
+    if (broadcastDailyCap !== undefined) workspace.broadcastDailyCap = parseInt(broadcastDailyCap, 10);
+    if (broadcastMinDelay !== undefined) workspace.broadcastMinDelay = parseInt(broadcastMinDelay, 10);
+    if (broadcastMaxDelay !== undefined) workspace.broadcastMaxDelay = parseInt(broadcastMaxDelay, 10);
+    if (aiAutoReplyEnabled !== undefined) workspace.aiAutoReplyEnabled = !!aiAutoReplyEnabled;
+    if (aiConfidenceThreshold !== undefined) workspace.aiConfidenceThreshold = parseFloat(aiConfidenceThreshold);
+    if (aiSystemPrompt !== undefined) workspace.aiSystemPrompt = aiSystemPrompt;
 
     await workspace.save();
 

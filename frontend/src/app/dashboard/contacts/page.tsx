@@ -36,6 +36,7 @@ interface Contact {
   tags?: string;
   birthday?: string;
   leadSource?: string;
+  isSynced?: boolean;
   leadStage?: string;
   leadScore?: string;
   conversionProbability?: number;
@@ -72,6 +73,11 @@ export default function ContactsCenterPage() {
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [keepPrimaryId, setKeepPrimaryId] = useState('');
+  const [mergingContacts, setMergingContacts] = useState(false);
 
   // New Contact form states
   const [newName, setNewName] = useState('');
@@ -301,6 +307,34 @@ export default function ContactsCenterPage() {
     }
   };
 
+  const handleMergeConfirm = async () => {
+    if (selectedContactIds.length !== 2 || !keepPrimaryId) return;
+    const targetContactId = keepPrimaryId;
+    const sourceContactId = selectedContactIds.find(id => id !== targetContactId);
+    if (!sourceContactId) return;
+
+    setMergingContacts(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await api.post('/contacts/merge', {
+        sourceContactId,
+        targetContactId
+      });
+      if (res.data.success) {
+        setSuccess('Contacts merged successfully.');
+        setIsMergeModalOpen(false);
+        setSelectionMode(false);
+        setSelectedContactIds([]);
+        loadContacts();
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to merge contacts.');
+    } finally {
+      setMergingContacts(false);
+    }
+  };
+
   const filterTabs = ['All', 'VIP', 'Retail', 'Wholesale', 'Distributor', 'Supermarket', 'Organic Store'];
   const kanbanStages = ['New', 'Contacted', 'Qualified', 'Proposal Sent', 'Negotiation', 'Won', 'Lost'];
 
@@ -327,6 +361,41 @@ export default function ContactsCenterPage() {
           >
             <Download className="w-3.5 h-3.5 text-primary" /> Export CSV
           </button>
+          {selectionMode ? (
+            <>
+              {selectedContactIds.length === 2 && (
+                <button
+                  onClick={() => {
+                    setKeepPrimaryId(selectedContactIds[0]);
+                    setIsMergeModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-md cursor-pointer animate-pulse"
+                >
+                  <Layers className="w-3.5 h-3.5" /> Merge Selected (2)
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setSelectionMode(false);
+                  setSelectedContactIds([]);
+                }}
+                className="px-4 py-2.5 rounded-xl border border-rose-500/30 hover:bg-rose-500/10 text-xs font-semibold text-rose-400 transition-all cursor-pointer"
+              >
+                Cancel Merge
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => {
+                setSelectionMode(true);
+                setSelectedContactIds([]);
+              }}
+              className="px-4 py-2.5 rounded-xl border border-neutral-800 hover:bg-neutral-900 text-xs font-semibold flex items-center gap-2 text-neutral-300 transition-all cursor-pointer"
+            >
+              <Layers className="w-3.5 h-3.5 text-primary" /> Merge Mode
+            </button>
+          )}
+
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-md shadow-primary/10 cursor-pointer"
@@ -412,6 +481,7 @@ export default function ContactsCenterPage() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-neutral-850 text-neutral-500 uppercase text-[9px] font-bold">
+                  {selectionMode && <th className="pb-3.5 font-bold w-12 pl-1">Select</th>}
                   <th className="pb-3.5 font-bold">Contact Details</th>
                   <th className="pb-3.5 font-bold">Location / Company</th>
                   <th className="pb-3.5 font-bold">Tags</th>
@@ -424,19 +494,36 @@ export default function ContactsCenterPage() {
               <tbody className="divide-y divide-neutral-900/40">
                 {loading && contacts.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center">
+                    <td colSpan={selectionMode ? 8 : 7} className="py-8 text-center">
                       <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
                     </td>
                   </tr>
                 ) : contacts.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-neutral-500">
+                    <td colSpan={selectionMode ? 8 : 7} className="py-8 text-center text-neutral-500">
                       No contacts found in this group segment.
                     </td>
                   </tr>
                 ) : (
                   contacts.map((contact) => (
                     <tr key={contact.id} className="hover:bg-neutral-900/25 group text-neutral-200">
+                      {selectionMode && (
+                        <td className="py-4 pl-1 shrink-0">
+                          <input
+                            type="checkbox"
+                            checked={selectedContactIds.includes(contact.id)}
+                            disabled={selectedContactIds.length >= 2 && !selectedContactIds.includes(contact.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedContactIds(prev => [...prev, contact.id]);
+                              } else {
+                                setSelectedContactIds(prev => prev.filter(id => id !== contact.id));
+                              }
+                            }}
+                            className="rounded border-neutral-800 text-primary focus:ring-primary w-4 h-4 bg-neutral-950 cursor-pointer"
+                          />
+                        </td>
+                      )}
                       {/* Name & Phone */}
                       <td className="py-4 pr-4 cursor-pointer hover:opacity-80" onClick={() => handleOpenTimeline(contact)}>
                         <div className="flex items-center gap-3">
@@ -444,7 +531,14 @@ export default function ContactsCenterPage() {
                             {contact.name.slice(0, 1).toUpperCase()}
                           </div>
                           <div>
-                            <span className="block font-bold text-neutral-200 text-sm leading-snug hover:underline">{contact.name}</span>
+                            <span className="block font-bold text-neutral-200 text-sm leading-snug hover:underline flex items-center gap-1.5">
+                              {contact.name}
+                              {contact.isSynced && (
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse" title="Auto-synced from WhatsApp">
+                                  Synced
+                                </span>
+                              )}
+                            </span>
                             <span className="block text-[10px] text-neutral-550 font-mono">+{contact.phone}</span>
                           </div>
                         </div>
@@ -487,7 +581,15 @@ export default function ContactsCenterPage() {
                         <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                           {contact.leadStage || 'New'}
                         </span>
-                        <span className="block text-[9px] text-neutral-500 font-medium mt-1">Source: {contact.leadSource || 'Manual'}</span>
+                        <div className="mt-1">
+                          <span className={`inline-block px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${
+                            contact.leadSource === 'WhatsApp' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                            contact.leadSource === 'CSV Import' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                            'bg-neutral-900 text-neutral-500 border-neutral-850'
+                          }`} title="Contact acquisition channel source">
+                            {contact.leadSource || 'Manual'}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Score & Churn Health */}
@@ -879,7 +981,97 @@ export default function ContactsCenterPage() {
         </div>
       )}
 
-      {/* SLIDE-OVER DRAWER: CUSTOMER TIMELINE & LTV */}
+      {/* MODAL: MERGE CONTACTS */}
+      {isMergeModalOpen && selectedContactIds.length === 2 && (
+        (() => {
+          const contactA = contacts.find(c => c.id === selectedContactIds[0]);
+          const contactB = contacts.find(c => c.id === selectedContactIds[1]);
+          if (!contactA || !contactB) return null;
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+              <div className="w-full max-w-lg rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                <h3 className="text-lg font-bold text-neutral-100 flex items-center gap-2 mb-2">
+                  <Layers className="w-5 h-5 text-amber-500" /> Merge Customer Contacts
+                </h3>
+                <p className="text-xs text-neutral-400 mb-6">
+                  You are merging two customer records. Check the option representing the **PRIMARY** contact profile you want to keep. The other contact record will be deleted, and all associated messages, notes, and sales orders will be linked to the primary one.
+                </p>
+
+                <div className="space-y-4 mb-6">
+                  <div 
+                    onClick={() => setKeepPrimaryId(contactA.id)}
+                    className={`p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
+                      keepPrimaryId === contactA.id 
+                        ? 'border-emerald-500 bg-emerald-500/5 shadow-md shadow-emerald-500/5' 
+                        : 'border-neutral-800 bg-neutral-950/20 hover:border-neutral-700'
+                    }`}
+                  >
+                    <input 
+                      type="radio" 
+                      name="keepPrimary" 
+                      checked={keepPrimaryId === contactA.id} 
+                      onChange={() => setKeepPrimaryId(contactA.id)}
+                      className="mt-1 text-primary focus:ring-primary bg-neutral-950 cursor-pointer"
+                    />
+                    <div className="text-xs space-y-1">
+                      <span className="font-extrabold text-neutral-200 block text-sm">{contactA.name}</span>
+                      <span className="text-neutral-555 block font-mono">Phone: +{contactA.phone}</span>
+                      {contactA.email && <span className="text-neutral-400 block">Email: {contactA.email}</span>}
+                      {contactA.city && <span className="text-neutral-400 block">City: {contactA.city}</span>}
+                      <span className="text-neutral-450 block">Spend Value: <span className="font-extrabold text-neutral-200">₹{parseFloat((contactA as any).totalPurchaseValue || 0).toFixed(2)}</span></span>
+                    </div>
+                  </div>
+
+                  <div 
+                    onClick={() => setKeepPrimaryId(contactB.id)}
+                    className={`p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
+                      keepPrimaryId === contactB.id 
+                        ? 'border-emerald-500 bg-emerald-500/5 shadow-md shadow-emerald-500/5' 
+                        : 'border-neutral-800 bg-neutral-950/20 hover:border-neutral-700'
+                    }`}
+                  >
+                    <input 
+                      type="radio" 
+                      name="keepPrimary" 
+                      checked={keepPrimaryId === contactB.id} 
+                      onChange={() => setKeepPrimaryId(contactB.id)}
+                      className="mt-1 text-primary focus:ring-primary bg-neutral-950 cursor-pointer"
+                    />
+                    <div className="text-xs space-y-1">
+                      <span className="font-extrabold text-neutral-200 block text-sm">{contactB.name}</span>
+                      <span className="text-neutral-555 block font-mono">Phone: +{contactB.phone}</span>
+                      {contactB.email && <span className="text-neutral-400 block">Email: {contactB.email}</span>}
+                      {contactB.city && <span className="text-neutral-400 block">City: {contactB.city}</span>}
+                      <span className="text-neutral-450 block">Spend Value: <span className="font-extrabold text-neutral-200">₹{parseFloat((contactB as any).totalPurchaseValue || 0).toFixed(2)}</span></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-800/80">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMergeModalOpen(false);
+                      setKeepPrimaryId('');
+                    }}
+                    className="px-4 py-2.5 rounded-xl border border-neutral-800 hover:bg-neutral-800 text-xs font-semibold text-neutral-300 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleMergeConfirm}
+                    disabled={mergingContacts}
+                    className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:bg-neutral-800 text-black font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+                  >
+                    {mergingContacts ? 'Merging Records...' : 'Confirm Merge'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()
+      )}
       {isDrawerOpen && selectedContact && (
         <div className="fixed inset-0 z-50 overflow-hidden">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setIsDrawerOpen(false)} />

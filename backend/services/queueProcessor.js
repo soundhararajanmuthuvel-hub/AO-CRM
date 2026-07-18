@@ -52,10 +52,38 @@ const processWorkspaceMessage = async (workspaceId) => {
     messageItem.status = 'Sending';
     await messageItem.save();
 
-    // 3. Validate subscription limits
+    // 3. Validate subscription limits & daily broadcast cap
     const workspace = await Workspace.findByPk(workspaceId);
     if (!workspace) {
       throw new Error('Workspace not found');
+    }
+
+    // Daily Cap Validation
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const sentTodayCount = await MessageLog.count({
+      where: {
+        workspaceId,
+        status: 'Sent',
+        createdAt: {
+          [Op.gte]: startOfDay
+        }
+      }
+    });
+
+    const dailyCap = workspace.broadcastDailyCap || 500;
+    if (sentTodayCount >= dailyCap) {
+      console.log(`[Queue Processor] Workspace ${workspaceId} crossed daily send cap of ${dailyCap}. Auto-pausing campaign.`);
+      messageItem.status = 'Pending';
+      messageItem.error = 'Daily send cap exceeded';
+      await messageItem.save();
+
+      if (messageItem.campaignId) {
+        await Campaign.update({ status: 'Draft' }, { where: { id: messageItem.campaignId } });
+      }
+
+      scheduleNext(workspaceId);
+      return;
     }
 
     if (workspace.messageUsageThisMonth >= workspace.messageLimit) {
@@ -126,6 +154,14 @@ const processWorkspaceMessage = async (workspaceId) => {
 
     } catch (sendError) {
       console.error(`[Queue Processor] Send failed for message ${messageItem.id}:`, sendError.message);
+
+      // Auto-pause campaign if WhatsApp returns any error mid-batch
+      if (messageItem.campaignId) {
+        try {
+          await Campaign.update({ status: 'Draft' }, { where: { id: messageItem.campaignId } });
+          console.log(`[Queue Processor] Campaign ${messageItem.campaignId} auto-paused due to send error: ${sendError.message}`);
+        } catch (e) {}
+      }
       
       // Attempt retry backoff delays: 1 min, 5 min, 15 min, 60 min (1 hour)
       const attempt = messageItem.retryCount + 1;
@@ -179,9 +215,22 @@ const processWorkspaceMessage = async (workspaceId) => {
   }
 };
 
-const scheduleNext = (workspaceId) => {
-  const randomDelay = Math.floor(Math.random() * 5000) + 5000; // 5000 to 10000 ms
-  console.log(`[Queue Processor] Scheduling next message for workspace ${workspaceId} in ${randomDelay / 1000}s`);
+const scheduleNext = async (workspaceId) => {
+  let minSec = 3;
+  let maxSec = 8;
+  try {
+    const ws = await Workspace.findByPk(workspaceId);
+    if (ws) {
+      minSec = ws.broadcastMinDelay || 3;
+      maxSec = ws.broadcastMaxDelay || 8;
+    }
+  } catch (e) {}
+
+  const minMs = minSec * 1000;
+  const maxMs = maxSec * 1000;
+  const randomDelay = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+
+  console.log(`[Queue Processor] Scheduling next message for workspace ${workspaceId} in ${randomDelay / 1000}s (range: ${minSec}-${maxSec}s)`);
   
   const timer = setTimeout(() => {
     processWorkspaceMessage(workspaceId);

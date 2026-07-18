@@ -14,6 +14,7 @@ router.get('/:id/timeline', contactController.getContactTimeline);
 router.put('/:id', contactController.updateContact);
 router.delete('/:id', contactController.deleteContact);
 router.post('/import', upload.single('file'), contactController.importCSV);
+router.post('/merge', contactController.mergeContacts);
 router.get('/export', contactController.exportCSV);
 
 module.exports = router;

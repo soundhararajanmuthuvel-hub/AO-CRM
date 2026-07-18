@@ -1,5 +1,45 @@
 const { SalesOrder, Contact, User } = require('../models');
 
+const autoTagContact = async (workspaceId, contact) => {
+  try {
+    const orderCount = await SalesOrder.count({
+      where: {
+        workspaceId,
+        phone: contact.phone,
+        status: ['Confirmed', 'Processing', 'Dispatched', 'Delivered']
+      }
+    });
+
+    const tags = contact.tags ? contact.tags.split(',').map(t => t.trim()) : [];
+    
+    if (orderCount >= 2 && !tags.includes('Repeat Customer')) {
+      tags.push('Repeat Customer');
+    }
+    
+    const totalRev = parseFloat(contact.totalPurchaseValue || 0);
+    if ((totalRev >= 10000 || orderCount >= 3) && !tags.includes('VIP')) {
+      tags.push('VIP');
+    }
+
+    if (orderCount > 0) {
+      const avgValue = totalRev / orderCount;
+      if (avgValue > 5000 && !tags.includes('Wholesale')) {
+        tags.push('Wholesale');
+      }
+    }
+
+    contact.tags = tags.filter(Boolean).join(', ');
+    
+    if (tags.includes('VIP')) {
+      contact.leadScore = 'Hot';
+    }
+    
+    await contact.save();
+  } catch (err) {
+    console.error('Error during auto-tagging contact:', err);
+  }
+};
+
 exports.getOrders = async (req, res) => {
   try {
     const workspaceId = req.workspaceId;
@@ -106,6 +146,7 @@ exports.updateOrderStatus = async (req, res) => {
         contact.totalPurchaseValue = total;
         contact.lastPurchaseDate = new Date();
         await contact.save();
+        await autoTagContact(workspaceId, contact);
       }
     }
 
@@ -165,6 +206,7 @@ exports.approveDraftOrder = async (req, res) => {
     contact.totalPurchaseValue = total;
     contact.lastPurchaseDate = new Date();
     await contact.save();
+    await autoTagContact(workspaceId, contact);
 
     return res.json({ success: true, message: 'Draft order approved and customer spend updated.', order });
   } catch (error) {

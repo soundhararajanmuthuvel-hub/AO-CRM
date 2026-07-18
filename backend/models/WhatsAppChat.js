@@ -67,6 +67,11 @@ const WhatsAppChat = sequelize.define('WhatsAppChat', {
   isGroup: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
+  },
+  contactId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'contact_id'
   }
 }, {
   timestamps: true,

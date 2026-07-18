@@ -81,6 +81,21 @@ const Contact = sequelize.define('Contact', {
     type: DataTypes.STRING, // 'Active', 'At Risk', 'Inactive'
     defaultValue: 'Active',
   },
+  isOptedOut: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'is_opted_out'
+  },
+  lastInboundMessageTime: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'last_inbound_message_time'
+  },
+  isSynced: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'is_synced'
+  }
 }, {
   timestamps: true,
   indexes: [
