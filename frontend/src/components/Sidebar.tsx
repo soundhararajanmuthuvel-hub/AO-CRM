@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   MessageSquare,
   Users,
-  FileCode,
   Megaphone,
   GitBranch,
   Settings,
@@ -19,7 +18,12 @@ import {
   Inbox,
   Package,
   Award,
-  BarChart3
+  BarChart3,
+  Bot,
+  Terminal,
+  Cpu,
+  Clock,
+  Workflow
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -28,20 +32,41 @@ export default function Sidebar() {
 
   const isSuperAdmin = user?.role === 'superadmin';
 
-  const tenantMenuItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'WhatsApp Link', href: '/dashboard/whatsapp', icon: MessageSquare },
-    { name: 'Team Inbox', href: '/dashboard/inbox', icon: Inbox },
-    { name: 'Products', href: '/dashboard/products', icon: Package },
-    { name: 'Sales Orders', href: '/dashboard/orders', icon: ShoppingCart },
-    { name: 'Sales Team', href: '/dashboard/sales-team', icon: Award },
-    { name: 'Auto Replies', href: '/dashboard/auto-replies', icon: Zap },
-    { name: 'Contacts', href: '/dashboard/contacts', icon: Users },
-    { name: 'Templates', href: '/dashboard/templates', icon: FileCode },
-    { name: 'Campaigns', href: '/dashboard/campaigns', icon: Megaphone },
-    { name: 'Automations', href: '/dashboard/automation', icon: GitBranch },
-    { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-    { name: 'Settings & Billing', href: '/dashboard/settings', icon: Settings },
+  // Grouped Menu Items for WhatsFlow AI
+  const sections = [
+    {
+      title: 'Overview',
+      items: [
+        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }
+      ]
+    },
+    {
+      title: 'WhatsApp Hub',
+      items: [
+        { name: 'Sessions', href: '/dashboard/whatsapp', icon: MessageSquare },
+        { name: 'Team Inbox', href: '/dashboard/inbox', icon: Inbox },
+        { name: 'Contacts', href: '/dashboard/contacts', icon: Users },
+        { name: 'Catalog / Products', href: '/dashboard/products', icon: Package },
+        { name: 'Sales Orders', href: '/dashboard/orders', icon: ShoppingCart }
+      ]
+    },
+    {
+      title: 'Automation & AI Studio',
+      items: [
+        { name: 'Flow Builder', href: '/dashboard/automations', icon: GitBranch },
+        { name: 'AI Studio Agents', href: '/dashboard/ai-agents', icon: Bot },
+        { name: 'Broadcasts', href: '/dashboard/campaigns', icon: Megaphone },
+        { name: 'Scheduler Triggers', href: '/dashboard/automation', icon: Workflow }
+      ]
+    },
+    {
+      title: 'Developer Gateway',
+      items: [
+        { name: 'API Explorer', href: '/dashboard/api-explorer', icon: Terminal },
+        { name: 'MCP Integration', href: '/dashboard/mcp', icon: Cpu },
+        { name: 'Settings & Billing', href: '/dashboard/settings', icon: Settings }
+      ]
+    }
   ];
 
   const adminMenuItems = [
@@ -51,84 +76,114 @@ export default function Sidebar() {
     { name: 'WhatsApp Monitor', href: '/super-admin/whatsapp', icon: MessageSquare },
     { name: 'Support Tickets', href: '/super-admin/support', icon: Inbox },
     { name: 'System Settings', href: '/super-admin/settings', icon: Settings },
-    { name: 'Audit Logs', href: '/super-admin/audit-logs', icon: FileCode },
+    { name: 'Audit Logs', href: '/super-admin/audit-logs', icon: Terminal },
   ];
 
-  const menuItems = isSuperAdmin ? adminMenuItems : tenantMenuItems;
-
   return (
-    <aside className="w-64 border-r border-neutral-800 bg-neutral-900/50 backdrop-blur-md flex flex-col h-screen sticky top-0">
+    <aside className="w-64 border-r border-neutral-900 bg-[#0A0D14] flex flex-col h-screen sticky top-0">
+      
       {/* Brand Header */}
-      <div className="p-5 border-b border-neutral-850 flex flex-col gap-1 bg-neutral-950/20">
+      <div className="p-5 border-b border-neutral-900 flex flex-col gap-1.5 bg-[#070A0F]/30">
         <div className="flex items-center gap-2">
-          <span className="text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-primary to-teal-500">CUSMAN CRM</span>
+          <span className="w-6 h-6 rounded-md bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-neutral-950 font-black text-xs">W</span>
+          <span className="text-lg font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">WHATSFLOW AI</span>
         </div>
-        <span className="text-[9px] text-neutral-500 font-medium tracking-wide uppercase">Turn Conversations Into Customers</span>
+        <span className="text-[9px] text-neutral-500 font-bold tracking-wider uppercase">AI WhatsApp Gateway</span>
       </div>
 
       {/* Tenant Indicator */}
-      <div className="px-6 py-4 border-b border-neutral-800/50 bg-neutral-950/20">
+      <div className="px-6 py-4 border-b border-neutral-900/60 bg-[#070A0F]/20">
         <div className="flex items-center justify-between">
           <div className="truncate">
-            <span className="text-[10px] text-neutral-500 uppercase font-semibold">
-              {isSuperAdmin ? 'Platform Management' : 'Workspace'}
+            <span className="text-[9px] text-neutral-500 uppercase font-bold tracking-wider">
+              {isSuperAdmin ? 'Platform Admin' : 'Workspace'}
             </span>
             <span className="block font-medium text-xs text-neutral-300 truncate">
-              {isSuperAdmin ? 'InboxIQ System' : (workspace?.name || 'Loading...')}
+              {isSuperAdmin ? 'WhatsFlow Admin' : (workspace?.name || 'Loading...')}
             </span>
           </div>
-          <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-primary/25 border border-primary text-primary-foreground uppercase">
+          <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-emerald-500/10 border border-emerald-500/35 text-emerald-400 uppercase tracking-wide">
             {isSuperAdmin ? 'ADMIN' : (workspace?.subscriptionPlan || 'FREE')}
           </span>
         </div>
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                isActive
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/10'
-                  : 'text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200'
-              }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {item.name}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-4 py-4 space-y-5 overflow-y-auto">
+        {isSuperAdmin ? (
+          <div className="space-y-1">
+            {adminMenuItems.map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    isActive
+                      ? 'bg-emerald-500 text-neutral-950 shadow-md shadow-emerald-500/10 font-bold'
+                      : 'text-neutral-400 hover:bg-neutral-900 hover:text-neutral-250'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          sections.map((sec, idx) => (
+            <div key={idx} className="space-y-1.5 text-left">
+              <span className="block text-[9px] font-bold text-neutral-600 uppercase tracking-widest pl-3.5 mb-1.5">{sec.title}</span>
+              <div className="space-y-0.5">
+                {sec.items.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        isActive
+                          ? 'bg-emerald-500 text-neutral-950 shadow-md shadow-emerald-500/10 font-bold'
+                          : 'text-neutral-400 hover:bg-neutral-900 hover:text-neutral-250'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))
+        )}
       </nav>
 
       {/* Footer / User Profile */}
-      <div className="p-4 border-t border-neutral-800 flex flex-col gap-2">
+      <div className="p-4 border-t border-neutral-900 bg-[#070A0F]/20 flex flex-col gap-2">
         {isImpersonating && (
           <button
             onClick={exitImpersonation}
-            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-xs font-semibold bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 transition-all"
+            className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-xl text-[10px] font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 transition-all uppercase tracking-wide"
             title="Exit Impersonation Mode"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
             Exit Impersonation
           </button>
         )}
-        <div className="flex items-center gap-3 px-2 py-2">
-          <div className="w-9 h-9 rounded-full bg-neutral-800 flex items-center justify-center font-bold text-sm text-neutral-300 border border-neutral-700">
+        <div className="flex items-center gap-3 px-2 py-1">
+          <div className="w-8.5 h-8.5 rounded-full bg-neutral-900 flex items-center justify-center font-bold text-xs text-neutral-300 border border-neutral-850">
             {user?.name?.slice(0, 2).toUpperCase() || 'US'}
           </div>
-          <div className="truncate">
-            <span className="block font-medium text-sm text-neutral-200 truncate">{user?.name || 'User'}</span>
-            <span className="block text-xs text-neutral-500 truncate capitalize">{user?.role || 'Staff'}</span>
+          <div className="truncate text-left">
+            <span className="block font-semibold text-xs text-neutral-200 truncate">{user?.name || 'User'}</span>
+            <span className="block text-[10px] text-neutral-500 truncate capitalize">{user?.role || 'Staff'}</span>
           </div>
         </div>
         <button
           onClick={logout}
-          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-xs font-medium text-neutral-400 hover:bg-destructive/10 hover:text-red-400 transition-all"
+          className="flex items-center gap-3 w-full px-3.5 py-2 rounded-lg text-xs font-semibold text-neutral-500 hover:bg-red-500/10 hover:text-red-400 transition-all cursor-pointer"
         >
           <LogOut className="w-3.5 h-3.5" />
           Sign Out

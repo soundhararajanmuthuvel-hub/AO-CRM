@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
-import { AlertCircle, Lock, Mail, ArrowRight } from 'lucide-react';
+import { AlertCircle, Lock, Mail, ArrowRight, Sparkles } from 'lucide-react';
 
 export default function LoginPage() {
   const { user, login, googleLogin, loading } = useAuth();
@@ -53,29 +53,32 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-neutral-950 px-4 py-12 relative overflow-hidden">
+    <main className="min-h-screen flex items-center justify-center bg-[#0A0C14] px-4 py-12 relative overflow-hidden">
       
       {/* Background gradients */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] aurora-glow-emerald rounded-full blur-[140px] pointer-events-none filter" />
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] aurora-glow-indigo rounded-full blur-[140px] pointer-events-none filter" />
 
       {/* Login Card */}
-      <div className="w-full max-w-md p-8 rounded-3xl border border-neutral-800 bg-neutral-900/40 backdrop-blur-md relative z-10 shadow-2xl space-y-6">
+      <div className="w-full max-w-md p-8 rounded-3xl glass-card border border-neutral-850 relative z-10 shadow-2xl space-y-6">
         
         {/* Brand logo header */}
-        <div className="text-center space-y-2">
-          <img src="/logo-dark.svg" alt="Cusman CRM" className="h-10 w-auto mx-auto" />
-          <p className="text-xs text-neutral-500">Sign in to manage your WhatsApp sales relationships.</p>
+        <div className="text-center space-y-3">
+          <div className="flex items-center justify-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-neutral-950 font-black text-sm">W</span>
+            <span className="text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">WHATSFLOW AI</span>
+          </div>
+          <p className="text-xs text-neutral-400">Sign in to manage your WhatsApp automation and APIs.</p>
         </div>
 
         {error && (
-          <div className="p-3.5 rounded-xl bg-red-950/25 border border-red-800/40 text-red-300 text-xs flex items-center gap-2">
+          <div className="p-3.5 rounded-xl bg-red-950/20 border border-red-800/40 text-red-300 text-xs flex items-center gap-2">
             <AlertCircle className="w-4.5 h-4.5 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div>
             <label className="block text-xs font-semibold text-neutral-400 mb-1.5">Email Address</label>
             <div className="relative">
@@ -86,7 +89,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
-                className="w-full pl-11 pr-4 py-2.5 rounded-xl text-xs bg-neutral-950 border border-neutral-800 focus:outline-none focus:border-primary text-neutral-200 placeholder-neutral-650"
+                className="w-full pl-11 pr-4 py-2.5 rounded-xl text-xs bg-neutral-950 border border-neutral-800 focus:outline-none focus:border-emerald-500 text-neutral-200 placeholder-neutral-700 focus:ring-1 focus:ring-emerald-500"
               />
             </div>
           </div>
@@ -94,7 +97,7 @@ export default function LoginPage() {
           <div>
             <div className="flex justify-between items-center mb-1.5">
               <label className="block text-xs font-semibold text-neutral-400">Password</label>
-              <Link href="/forgot-password" className="text-[10px] text-primary hover:underline font-bold">Forgot?</Link>
+              <Link href="/forgot-password" className="text-[10px] text-emerald-400 hover:underline font-bold">Forgot?</Link>
             </div>
             <div className="relative">
               <Lock className="w-4 h-4 text-neutral-600 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -104,7 +107,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-11 pr-4 py-2.5 rounded-xl text-xs bg-neutral-950 border border-neutral-800 focus:outline-none focus:border-primary text-neutral-200 placeholder-neutral-650"
+                className="w-full pl-11 pr-4 py-2.5 rounded-xl text-xs bg-neutral-950 border border-neutral-800 focus:outline-none focus:border-emerald-500 text-neutral-200 placeholder-neutral-700 focus:ring-1 focus:ring-emerald-500"
               />
             </div>
           </div>
@@ -112,7 +115,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={localLoading || loading}
-            className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-xs uppercase tracking-wider hover:bg-primary/95 transition-all shadow-md shadow-primary/10 flex items-center justify-center gap-1.5"
+            className="w-full py-3 rounded-xl bg-emerald-500 text-neutral-950 font-bold text-xs uppercase tracking-wider hover:bg-emerald-400 transition-all shadow-md shadow-emerald-500/10 flex items-center justify-center gap-1.5 cursor-pointer"
           >
             {localLoading || loading ? 'Authenticating...' : 'Sign In'} <ArrowRight className="w-4 h-4" />
           </button>
@@ -130,7 +133,7 @@ export default function LoginPage() {
           onClick={handleGoogleLogin}
           type="button"
           disabled={localLoading || loading}
-          className="w-full py-2.5 rounded-xl border border-neutral-800 bg-neutral-950 hover:bg-neutral-900 transition-all font-semibold text-xs text-neutral-300 flex items-center justify-center gap-2"
+          className="w-full py-3 rounded-xl border border-neutral-800 bg-neutral-950 hover:bg-neutral-900 transition-all font-semibold text-xs text-neutral-300 flex items-center justify-center gap-2 cursor-pointer"
         >
           {/* Flat Google logo */}
           <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -156,8 +159,8 @@ export default function LoginPage() {
 
         {/* Link to signup */}
         <p className="text-center text-xs text-neutral-500">
-          New to Cusman CRM?{' '}
-          <Link href="/signup" className="text-primary hover:underline font-bold">
+          New to WhatsFlow AI?{' '}
+          <Link href="/signup" className="text-emerald-400 hover:underline font-bold">
             Create Free Workspace
           </Link>
         </p>

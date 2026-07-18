@@ -86,11 +86,18 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.glass-card {
+  background: rgba(10, 13, 20, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 .glass-light {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 /* Custom Scrollbar */
@@ -110,4 +117,17 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary) / 0.6);
+}
+
+/* Aurora Backdrop Glows */
+.aurora-glow-emerald {
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 60%);
+}
+
+.aurora-glow-indigo {
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 60%);
+}
+
+.aurora-glow-cyan {
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.05) 0%, transparent 60%);
 }

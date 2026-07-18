@@ -59,13 +59,15 @@ const syncWorkspaceChats = async (workspaceId, client) => {
   try {
     logInfo(workspaceId, 'Starting historical chat sync...');
     const chats = await client.getChats();
-    logInfo(workspaceId, `Found ${chats.length} active threads on device. Syncing all threads...`);
+    // Limit to the most recent 15 threads to prevent thread lock/timeouts
+    const recentChats = chats.slice(0, 15);
+    logInfo(workspaceId, `Found ${chats.length} active threads on device. Syncing top ${recentChats.length} recent threads...`);
 
     // Purge existing chats and messages for this workspace to clear out demo data
     await WhatsAppMessage.destroy({ where: { workspaceId } });
     await WhatsAppChat.destroy({ where: { workspaceId } });
 
-    for (const chat of chats) {
+    for (const chat of recentChats) {
       const chatId = chat.id._serialized;
       const timestamp = chat.timestamp ? new Date(chat.timestamp * 1000) : new Date();
       
@@ -95,20 +97,15 @@ const syncWorkspaceChats = async (workspaceId, client) => {
         isGroup
       });
 
-      // Fetch first 10 messages for the chat
+      // Fetch first 5 messages for the chat (down from 10)
       try {
-        const messages = await chat.fetchMessages({ limit: 10 });
+        const messages = await chat.fetchMessages({ limit: 5 });
         for (const msg of messages) {
           const msgId = msg.id.id;
           const msgTimestamp = new Date(msg.timestamp * 1000);
 
-          let aiTags = { leadIntent: 'None', orderIntent: 'None', sentiment: 'None', suggestedReply: null };
-          if (!msg.fromMe && msg.body) {
-            try {
-              const aiService = require('./aiService');
-              aiTags = await aiService.analyzeMessage(msg.body, workspaceId);
-            } catch (err) {}
-          }
+          // Skip making API OpenAI calls during historical sync to boost speed and avoid rate limits
+          const aiTags = { leadIntent: 'None', orderIntent: 'None', sentiment: 'None', suggestedReply: null };
 
           await WhatsAppMessage.create({
             workspaceId,
